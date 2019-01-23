@@ -1,0 +1,16 @@
+imageSquaredDimension = 227
+batchSize = 48
+learningRate = 10**-1
+baseFolder = '/home/filip/workbench/tree-images'
+trainLmdbPath = baseFolder + '/workspace/lmdb/train-dataset-lmdb-{}'.format(imageSquaredDimension)
+valLmdbPath = baseFolder + '/workspace/lmdb/val-dataset-lmdb-{}'.format(imageSquaredDimension)
+checkpointPath = baseFolder + '/checkpoints'
+labelsPath = baseFolder + '/labels.json'
+imageLabelMapPath = baseFolder + '/feature_labels.json'
+trainImageLabelMapPath = baseFolder + '/feature_labels_train.json'
+valImageLabelMapPath = baseFolder + '/feature_labels_val.json'
+trainIters = 50
+validateEvery = 1
+workspaceRootFolder = baseFolder + '/workspace'
+initNetPath = baseFolder + '/workspace/saves/init_net_{}.pb'.format(imageSquaredDimension)
+predictNetPath = baseFolder + '/workspace/saves/predict_net_{}.pb'.format(imageSquaredDimension)
