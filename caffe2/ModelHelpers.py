@@ -339,11 +339,11 @@ def InitTrainModel(
 		ScaffoldModelBackpropagation(model, softmax, 'label', learningRate)
 		# ScaffoldModelTrainingOperators(model, softmax, label, learningRate)
 
-		ScaffoldModelBackupOperators(model)
+		# ScaffoldModelBackupOperators(model)
 
 	return model
 
-def InitTestModel(
+def InitNonTrainingModel(
 	name,
 	labelsCount,
 	imageDimension,
@@ -372,33 +372,32 @@ def InitDeployModel(name, data, labelsCount, imageDimension):
 
 	return model
 
-def ExecuteModelTraining(workspace, trainModel, trainIters, statisticsEvery):
-	# train
-	workspace.RunNetOnce(trainModel.param_init_net)
-	workspace.CreateNet(trainModel.net, overwrite=True)
+def RunModel(workspace, model, iters, logEvery, statisticsHandler=None):
+	workspace.RunNetOnce(model.param_init_net)
+	workspace.CreateNet(model.net, overwrite=True)
 	# val
 	# workspace.RunNetOnce(valModel.param_init_net)
 	# workspace.CreateNet(valModel.net)
-	amountOfStatistics = int(math.ceil(trainIters/float(statisticsEvery)))
-	lossLog = np.zeros(amountOfStatistics)
-	accuracyLog = np.zeros(amountOfStatistics)
-	logCounter = 0
+	# amountOfStatistics = int(math.ceil(iters/float(logEvery)))
+	# lossLog = np.zeros(amountOfStatistics)
+	# accuracyLog = np.zeros(amountOfStatistics)
+	# logCounter = 0
 
 
-	for i in range(trainIters):
-		workspace.RunNet(trainModel.net)
-		if (statisticsEvery != -1) and (i % statisticsEvery == 0):
-			lossLog[logCounter] = workspace.FetchBlob('loss')
-			# workspace.RunNet(valModel.net)
-			accuracyLog[logCounter] = workspace.FetchBlob('accuracy')
+	for i in range(iters):
+		workspace.RunNet(model.net)
+		if (logEvery != -1) and (i % logEvery == 0) and type(statisticsHandler) != type(None):
+			statisticsHandler(i)
+			# lossLog[logCounter] = workspace.FetchBlob('loss')
+			# accuracyLog[logCounter] = workspace.FetchBlob('accuracy')
 
-			print 'iter: %d' % i
-			print 'loss: %.4f' % lossLog[logCounter], 
-			print 'accuracy: %.4f' % accuracyLog[logCounter]
-			print '---'
-			logCounter += 1
+			# print 'iter: %d' % i
+			# print 'loss: %.4f' % lossLog[logCounter], 
+			# print 'accuracy: %.4f' % accuracyLog[logCounter]
+			# print '---'
+			# logCounter += 1
 	
-	return lossLog, accuracyLog
+	# return lossLog, accuracyLog
 
 def SaveModel(workspace, deployModel, initNetPath, predictNetPath):
 	workspace.RunNetOnce(deployModel.param_init_net)

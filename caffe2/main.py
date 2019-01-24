@@ -9,9 +9,9 @@ from caffe2.python import net_drawer
 from DataHelpers import CreateLmdb, FetchRowCount, SplitImages
 from ModelHelpers import (
 	InitTrainModel,
-	InitTestModel,
+	InitNonTrainingModel,
 	InitDeployModel,
-	ExecuteModelTraining,
+	RunModel,
 	SaveModel,
 	LoadTrainModel
 )
@@ -20,38 +20,36 @@ from Constants import (
 	batchSize,
 	learningRate,
 	trainLmdbPath,
+	testLmdbPath,
 	valLmdbPath,
 	checkpointPath,
 	labelsPath,
 	imageLabelMapPath,
 	trainImageLabelMapPath,
+	testImageLabelMapPath,
 	valImageLabelMapPath,
 	trainIters,
-	validateEvery,
+	statisticsEvery,
 	workspaceRootFolder,
 	initNetPath,
 	predictNetPath
 )
 
+from methods import Confirm, RunValidation, PrintStatistics
+
 # check image_label_maps
-if not isfile(trainImageLabelMapPath):
-	train, val = SplitImages(imageLabelMapPath, 0.7)
+if not (isfile(trainImageLabelMapPath) and isfile(testImageLabelMapPath) and isfile(valImageLabelMapPath)):
+	try:
+		train, test, val = SplitImages(imageLabelMapPath, 0.7, 0.1)
+	except ValueError as err:
+		print err
+		sys.exit(1)
 	with open(trainImageLabelMapPath, 'w') as f:
 		json.dump(train.tolist(), f, indent=2)
+	with open(testImageLabelMapPath, 'w') as f:
+		json.dump(test.tolist(), f, indent=2)
 	with open(valImageLabelMapPath, 'w') as f:
 		json.dump(val.tolist(), f, indent=2)
-
-# create train lmdb if it doesnt exist
-if not isdir(trainLmdbPath):
-	print 'train lmdb not found at: %s, creating one...' % trainLmdbPath
-	makedirs(trainLmdbPath)
-	CreateLmdb(
-		trainLmdbPath,
-		trainImageLabelMapPath,
-		imageSquaredDimension
-	)
-else:
-	print 'train lmdb found!'
 
 # create val lmdb if it doesnt exist
 if not isdir(valLmdbPath):
@@ -64,8 +62,28 @@ if not isdir(valLmdbPath):
 else:
 	print 'val lmdb found!'
 
-def Confirm(message):
-	return raw_input(message + ' [[y]/n] ') in ['y', 'Y', 'yes', '']
+# create test lmdb if it doesnt exist
+if not isdir(testLmdbPath):
+	print 'test lmdb not found at: %s, creating one...' % testLmdbPath
+	CreateLmdb(
+		testLmdbPath,
+		testImageLabelMapPath,
+		imageSquaredDimension
+	)
+else:
+	print 'test lmdb found!'
+
+# create train lmdb if it doesnt exist
+if not isdir(trainLmdbPath):
+	print 'train lmdb not found at: %s, creating one...' % trainLmdbPath
+	makedirs(trainLmdbPath)
+	CreateLmdb(
+		trainLmdbPath,
+		trainImageLabelMapPath,
+		imageSquaredDimension
+	)
+else:
+	print 'train lmdb found!'
 
 workspace.ResetWorkspace(workspaceRootFolder)
 
@@ -97,11 +115,20 @@ if trainModel == None:
 	)
 
 print '---'
-testModel = InitTestModel(
+testModel = InitNonTrainingModel(
 	'test_model',
 	len(labels),
 	imageSquaredDimension,
-	valLmdbPath,
+	testLmdbPath,
+	1
+)
+
+print '---'
+valModel = InitNonTrainingModel(
+	'val_model',
+	len(labels),
+	imageSquaredDimension,
+	testLmdbPath,
 	1
 )
 
@@ -114,23 +141,25 @@ deployModel = InitDeployModel(
 	imageSquaredDimension
 )
 
-# graph = net_drawer.GetPydotGraph(trainModel.net.Proto().op, 'TreeNet', rankdir='lr')
-# Image.fromarray(graph.create_png()).show('TreeNet')
-
-# graph = net_drawer.GetPydotGraphMinimal(trainModel.net.Proto().op, 'TreeNet', rankdir="lr", minimal_dependency=True)
-# Image.fromarray(graph.create_png()).show('TreeNet1')
-
 # sys.exit(0)
 
 print 'starting training of %d iterations' % trainIters
 
-loss, accuracy = ExecuteModelTraining(workspace, trainModel, trainIters, validateEvery)
+workspace.RunNetOnce(valModel.param_init_net)
+workspace.CreateNet(valModel.net)
+loss, accuracy = RunModel(workspace, trainModel, trainIters, statisticsEvery, lambda i: RunValidation(workspace, valModel, i))
 
 print 'last accuracies: '
-print accuracy[-10:-1]
+print accuracy[-10:]
 
 print 'last losses: '
-print loss[-10:-1]
+print loss[-10:]
+
+testLen = len(test)
+print 'starting testing of %d' % testLen
+workspace.RunNetOnce(testModel.param_init_net)
+workspace.CreateNet(testModel.net)
+loss, accuracy = RunModel(workspace, testModel, testLen, 1, lambda i: PrintStatistics(workspace, i))
 
 if not Confirm('do y want to save model?'):
 	print 'not saving model..'

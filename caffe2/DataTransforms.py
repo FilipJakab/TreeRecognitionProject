@@ -1,4 +1,6 @@
 import skimage
+import numpy as np
+import cv2
 
 def CropCenter(img, dimension_size):
 	width, heigth = img.shape[1], img.shape[0]
@@ -34,3 +36,46 @@ def ResizeImage(img, imageDimension):
 		)
 	
 	return img
+
+def ChangeBrightness(img, value):
+	hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+	h, s, v = cv2.split(hsv)
+
+	limit = 255 - value
+	v[v > limit] = 255
+	v[v <= limit] += value
+
+	return cv2.cvtColor(cv2.merge((h, s, v)), cv2.COLOR_HSV2BGR)
+
+def AugmentImage(img, brightnessIndex=64, maxDeviation=32, deviationStep=8):
+	'''
+	For now this method creates 4 * (((maxDeviation / deviationStep) + 1) ** 2)
+	'''
+
+	deviatedImage = np.zeros((img.shape[0] + maxDeviation, img.shape[1] + maxDeviation, img.shape[2]), dtype=np.uint8)
+	startX = (deviatedImage.shape[0]-img.shape[0])/2
+	startY = (deviatedImage.shape[1]-img.shape[1])/2
+	deviatedImage[startX:startX+img.shape[0], startY:startY+img.shape[1]] = img
+	for y in range((maxDeviation / deviationStep) + 1):
+		for x in range((maxDeviation / deviationStep) + 1):
+			yDevStep = y*deviationStep
+			xDevStep = x*deviationStep
+			currentDeviatedImage = deviatedImage[yDevStep:(yDevStep)+img.shape[0], xDevStep:(xDevStep)+img.shape[1]]
+
+			# flips - horizontal, vertical, and combined
+			vFlipped = np.fliplr(currentDeviatedImage)
+			hFlipped = np.flipud(currentDeviatedImage)
+			hvFlipped = np.fliplr(hFlipped)
+
+			yield currentDeviatedImage
+			yield vFlipped
+			yield hFlipped
+			yield hvFlipped
+			# yield np.array(ChangeBrightness(currentDeviatedImage, brightnessIndex))
+			# yield np.array(ChangeBrightness(currentDeviatedImage, -brightnessIndex))
+			# yield np.array(ChangeBrightness(vFlipped, brightnessIndex))
+			# yield np.array(ChangeBrightness(vFlipped, -brightnessIndex))
+			# yield np.array(ChangeBrightness(hFlipped, brightnessIndex))
+			# yield np.array(ChangeBrightness(hFlipped, -brightnessIndex))
+			# yield np.array(ChangeBrightness(hvFlipped, brightnessIndex))
+			# yield np.array(ChangeBrightness(hvFlipped, -brightnessIndex))

@@ -4,7 +4,7 @@ import skimage
 import numpy as np
 
 # custom transforms
-from DataTransforms import CropCenter, ResizeImage
+from DataTransforms import CropCenter, ResizeImage, AugmentImage
 
 # caffe2 stuff
 from caffe2.python.core import caffe2_pb2
@@ -29,53 +29,63 @@ def PreprocessImage(img, imageDimension, castImage=False, scaleImage=False):
 	
 	return img
 
-def CreateLmdb(lmdbPath, imageListPath, image_size):
+def CreateLmdb(lmdbPath, imageListPath, imageSize, batchSize=1500):
 	imageList = None
 	with open(imageListPath, 'r') as f:
 		imageList = json.load(f)
 
+	count = 0
 	env = lmdb.open(lmdbPath, map_size=1<<35, create=True)
-	with env.begin(write=True) as transaction:
-		imageRootFolderPath = '/'.join(imageListPath.split('/')[:-1])
-		count = 0
-		for image in imageList:
-			img = None
-			try:
-				# print 'processing image:', image
-				img = skimage.io.imread(join(imageRootFolderPath, image[0])).astype(np.float)
-				img = PreprocessImage(img, image_size)
-			except ValueError:
-				print 'image %s is not colorful, omitted' % image
-				continue
-			except IOError:
-				print 'image %s is not readable, omitted' % image
-				continue
 
-			proto = caffe2_pb2.TensorProtos()
-			# insert image to proto
-			imageTensor = proto.protos.add()
-			imageTensor.dims.extend(img.shape)
-			imageTensor.data_type = 1
-			imageTensor.float_data.extend(np.reshape(img, np.prod(img.shape)))
+	augmentAmplifier = (4 * (((64 / 32) + 1) ** 2))
+	computedBatchSize = batchSize / augmentAmplifier
+	for batch in [imageList[x:x+computedBatchSize] for x in range(0, len(imageList), computedBatchSize)]:
+		print 'Starting new batch..'
+		with env.begin(write=True) as transaction:
+			imageRootFolderPath = '/'.join(imageListPath.split('/')[:-1])
+			for image in batch:
+				img = None
+				try:
+					# print 'processing image:', image
+					img = skimage.io.imread(join(imageRootFolderPath, image[0])).astype(np.uint8)
+				except ValueError:
+					print 'image %s is not colorful, omitted' % image
+					continue
+				except IOError:
+					print 'image %s is not readable, omitted' % image
+					continue
 
-			# insert label to proto
-			labelTensor = proto.protos.add()
-			labelTensor.data_type = 2
-			labelTensor.int32_data.append(int(image[1]))
+				for augmented in AugmentImage(img, maxDeviation=64, deviationStep=32):
+					augmented = PreprocessImage(augmented, imageSize)
 
-			# insert proto to lmdb
-			transaction.put(
-				'{}'.format(count),
-				proto.SerializeToString()
-			)
+					proto = caffe2_pb2.TensorProtos()
+					# insert image to proto
+					imageTensor = proto.protos.add()
+					imageTensor.dims.extend(augmented.shape)
+					imageTensor.data_type = 1
+					imageTensor.float_data.extend(np.reshape(augmented, np.prod(augmented.shape)))
 
-			count = count + 1
-			if (count % 100) == 0:
-				print 'inserted {} rows..'.format(count)
-		
-		print 'Finished creating lmdb. Rows inserted: {}'.format(count)
+					# insert label to proto
+					labelTensor = proto.protos.add()
+					labelTensor.data_type = 2
+					labelTensor.int32_data.append(int(image[1]))
 
-def SplitImages(allImagesJsonPath, ratio):
+					# insert proto to lmdb
+					transaction.put(
+						'{}'.format(count),
+						proto.SerializeToString()
+					)
+
+					count = count + 1
+					if (count % 100) == 0:
+						print 'inserted {} rows..'.format(count)
+		print 'Inserted %d images out of %d' % (count, len(imageList) * augmentAmplifier)
+	print 'Finished creating lmdb. Rows inserted: {}'.format(count)
+
+def SplitImages(allImagesJsonPath, ratio, valRatio):
+	if ratio + valRatio >= 1:
+		raise ValueError('rations does not make sense')
+
 	allImages = None
 	# load images table
 	with open(allImagesJsonPath, 'r') as f:
@@ -88,11 +98,15 @@ def SplitImages(allImagesJsonPath, ratio):
 	# shuffle images
 	result = np.random.permutation(result)
 
-	amount = int(ratio*len(result))
-	train = result[:amount]
-	val = result[amount:]
+	amount = len(result)
+	trainTestLimit = int(ratio*amount)
+	trainValLimit = int(valRatio*amount)
+	
+	train = result[:trainTestLimit]
+	test = result[trainTestLimit:-trainValLimit]
+	val = train[-trainValLimit:]
 
-	return train, val
+	return train, test, val
 
 def FetchRowCount(lmdbPath):
 	env = lmdb.open(lmdbPath)
