@@ -2,6 +2,7 @@ import lmdb, glob, json
 from os.path import isdir, join
 import skimage
 import numpy as np
+from PIL import Image
 
 # custom transforms
 from DataTransforms import CropCenter, ResizeImage, AugmentImage
@@ -37,7 +38,7 @@ def CreateLmdb(lmdbPath, imageListPath, imageSize, batchSize=1500):
 	count = 0
 	env = lmdb.open(lmdbPath, map_size=1<<35, create=True)
 
-	augmentAmplifier = (4 * (((64 / 32) + 1) ** 2))
+	augmentAmplifier = 12 * (((48 / 16) + 1) ** 2)
 	computedBatchSize = batchSize / augmentAmplifier
 	for batch in [imageList[x:x+computedBatchSize] for x in range(0, len(imageList), computedBatchSize)]:
 		print 'Starting new batch..'
@@ -55,7 +56,7 @@ def CreateLmdb(lmdbPath, imageListPath, imageSize, batchSize=1500):
 					print 'image %s is not readable, omitted' % image
 					continue
 
-				for augmented in AugmentImage(img, maxDeviation=64, deviationStep=32):
+				for augmented in AugmentImage(img, maxDeviation=48, deviationStep=16, brightnessIndex=32):
 					augmented = PreprocessImage(augmented, imageSize)
 
 					proto = caffe2_pb2.TensorProtos()
@@ -82,31 +83,20 @@ def CreateLmdb(lmdbPath, imageListPath, imageSize, batchSize=1500):
 		print 'Inserted %d images out of %d' % (count, len(imageList) * augmentAmplifier)
 	print 'Finished creating lmdb. Rows inserted: {}'.format(count)
 
-def SplitImages(allImagesJsonPath, ratio, valRatio):
-	if ratio + valRatio >= 1:
-		raise ValueError('rations does not make sense')
-
-	allImages = None
-	# load images table
-	with open(allImagesJsonPath, 'r') as f:
-		allImages = json.load(f)
-	
-	result = []
-	for image in allImages.keys():
-		result.append([image, allImages[image]])
+def SplitImages(allImagesJsonPath, ratio, loadedImages=None):
+	# load images
+	if type(loadedImages) == type(None):
+		with open(allImagesJsonPath, 'r') as f:
+			allImages = json.load(f)
+	else:
+		allImages = loadedImages
 
 	# shuffle images
-	result = np.random.permutation(result)
+	allImages = np.random.permutation(allImages)
 
-	amount = len(result)
-	trainTestLimit = int(ratio*amount)
-	trainValLimit = int(valRatio*amount)
-	
-	train = result[:trainTestLimit]
-	test = result[trainTestLimit:-trainValLimit]
-	val = train[-trainValLimit:]
+	subSetBorder = int(len(allImages) * ratio)
 
-	return train, test, val
+	return allImages[:subSetBorder], allImages[subSetBorder:]
 
 def FetchRowCount(lmdbPath):
 	env = lmdb.open(lmdbPath)
