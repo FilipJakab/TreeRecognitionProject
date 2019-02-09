@@ -4,9 +4,9 @@ from os import makedirs
 from caffe2.python import workspace, core, caffe2_pb2
 import numpy as np
 
-from DataHelpers import SplitImages, CreateLmdb
+from DataHelpers import SplitImages, EnsureLmdb
 
-from ModelHelpers import LoadPretrainedSqueezenetModel
+from ModelHelpers import LoadCustomSqueezenetModel
 
 from DatasetHelpers import LmdbDatasetWrapper
 
@@ -22,8 +22,6 @@ def Confirm(message):
 	return raw_input(message + ' [[y]/n] ') in ['y', 'Y', 'yes', '']
 
 def RunValidation(model, i):
-	print 'before val:'
-	PrintStatistics(i)
 	workspace.RunNet(model.net)
 	print 'after val:'
 	PrintStatistics(i)
@@ -42,22 +40,10 @@ def EnsureFeatureLabelMap(baseImageLabelMapPath, imageLabelPath, ratio, alreadyL
 
 	return rest
 
-def EnsureLmdb(
-	lmdbPath,
-	imageLabelMapPath,
-	imageSquaredDimension):
-	if not isdir(lmdbPath):
-		makedirs(lmdbPath)
-		CreateLmdb(
-			lmdbPath,
-			imageLabelMapPath,
-			imageSquaredDimension
-		)
-
 def SqueezenetRetrain(labels):
 	devOps = core.DeviceOption(caffe2_pb2.CUDA, 0)
 
-	squeezenetModel = LoadPretrainedSqueezenetModel('squeezenet_model',
+	squeezenetModel = LoadCustomSqueezenetModel('squeezenet_model',
 		trainLmdbPath, len(labels), batchSize, imageSquaredDimension,
 		join(squeezenetFolder, 'init_net.pb'), join(squeezenetFolder, 'predict_net.pb'),
 		devOps, len(labels), ['conv10_w', 'conv10_b'])

@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image
 
 from caffe2.python import workspace, net_drawer, caffe2_pb2, core
-from DataHelpers import CreateLmdb, FetchRowCount, SplitImages
+from DataHelpers import EnsureLmdb, FetchRowCount, SplitImages
 from ModelHelpers import (
 	CreateModel,
 	CreateDeployModel,
@@ -20,11 +20,13 @@ from Constants import (
 	batchSize,
 	learningRate,
 	trainLmdbPath,
+	valLmdbPath,
 	testLmdbPath,
 	checkpointPath,
 	labelsPath,
 	imageLabelMapPath,
 	trainImageLabelMapPath,
+	valImageLabelMapPath,
 	testImageLabelMapPath,
 	trainIters,
 	statisticsEvery,
@@ -38,7 +40,6 @@ from Methods import (
 	RunValidation,
 	PrintStatistics,
 	EnsureFeatureLabelMap,
-	EnsureLmdb,
 	SqueezenetRetrain
 )
 
@@ -46,10 +47,11 @@ from DatasetHelpers import LmdbDatasetWrapper
 
 # check image_label_maps
 rest = EnsureFeatureLabelMap(imageLabelMapPath, trainImageLabelMapPath, 0.7)
-rest = EnsureFeatureLabelMap(imageLabelMapPath, trainImageLabelMapPath, 0.666, rest)
-EnsureFeatureLabelMap(imageLabelMapPath, testImageLabelMapPath, rest, 1)
+rest = EnsureFeatureLabelMap(imageLabelMapPath, testImageLabelMapPath, 0.666, rest)
+EnsureFeatureLabelMap(imageLabelMapPath, valImageLabelMapPath, 1, rest)
 
 EnsureLmdb(trainLmdbPath, trainImageLabelMapPath, imageSquaredDimension)
+EnsureLmdb(valLmdbPath, valImageLabelMapPath, imageSquaredDimension)
 EnsureLmdb(testLmdbPath, testImageLabelMapPath, imageSquaredDimension)
 
 workspace.ResetWorkspace(workspaceRootFolder)
@@ -81,16 +83,27 @@ else:
 		scaffoldAccuracy=True
 	)
 
-print '---'
-testModel = CreateModel(
-	'test_model',
-	len(labels),
-	imageSquaredDimension,
-	testLmdbPath,
-	1,
-	initParams=False,
-	scaffoldAccuracy=True
-)
+# valModel = CreateModel(
+# 	'val_model',
+# 	len(labels),
+# 	imageSquaredDimension,
+# 	valLmdbPath,
+# 	16,
+# 	initParams=False,
+# 	scaffoldAccuracy=True,
+# 	isTest=1
+# )
+
+# print '---'
+# testModel = CreateModel(
+# 	'test_model',
+# 	len(labels),
+# 	imageSquaredDimension,
+# 	testLmdbPath,
+# 	1,
+# 	initParams=False,
+# 	scaffoldAccuracy=True
+# )
 
 print '---'
 
@@ -107,12 +120,13 @@ acc, loss, iterList = RunModel(
 	trainModel,
 	trainIters,
 	statisticsEvery,
-	statisticsHandler=PrintStatistics,
+	# setupHandler=lambda: InitModel(valModel),
+	statisticsHandler=PrintStatistics
 	)
 
-testLen = FetchRowCount(testLmdbPath)
-print 'starting testing of %d' % testLen
-RunModel(testModel, testLen, 10, PrintStatistics)
+# testLen = FetchRowCount(testLmdbPath)
+# print 'starting testing of %d' % testLen
+# RunModel(testModel, testLen, 10, PrintStatistics)
 
 if not Confirm('do y want to save model?'):
 	print 'not saving model..'

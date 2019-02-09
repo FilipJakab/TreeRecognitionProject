@@ -1,11 +1,11 @@
-from caffe2.python import brew, optimizer, core, model_helper
+from caffe2.python import brew, optimizer, core, model_helper, workspace
 from os.path import join
 from os import makedirs
 import datetime
 import numpy as np
 import math
 from caffe2.python.predictor import mobile_exporter, predictor_exporter as pe
-from caffe2.python import caffe2_pb2, workspace
+from caffe2.proto import caffe2_pb2 as c2p2
 
 from caffe2.python.modeling import initializers
 from caffe2.python.modeling.parameter_info import ParameterTags
@@ -22,307 +22,51 @@ def ScaffoldModelInput(model, lmdbPath, batchSize):
 	# data is already in float type.. no conversion required
 	# floatData = model.Cast(dataInt, 'data_float', to=core.DataType.FLOAT)
 
-	# channel values from 0-255 to 0-1 were already scaled in preprocessing part
+	# # channel values from 0-255 to 0-1 were already scaled in preprocessing part
 	# data = model.Scale(floatData, 'data', scale=float(1. / 256))
 
-	model.StopGradient(data, data)
+	# model.StopGradient(data, data)
 	return data, label
 
-def computeImageDimensions(height, width, kernel, stride, pad):
-	new_height = ((height - kernel + (2 * pad)) / stride) + 1
-	new_width = ((width - kernel + (2 * pad)) / stride) + 1
-	return new_height, new_width
+def recalculateDim(size, kernel, stride, pad):
+	nSize = ((size - kernel + (2 * pad)) / stride) + 1
+	return nSize
 
 def getCnnModel(model, classCount, data, imageDimension, amountOfChannels=3, isTest=0):
-	return ScaffoldModellCNNv6(model, classCount, data, imageDimension, amountOfChannels)
+	return ScaffoldModelCNN_AlexNet(model, classCount, data, imageDimension, amountOfChannels)
 	# return ScaffoldModelCNNRepetitor(model, classCount, data, imageDimension, amountOfChannels, isTest=isTest)
 	# return ScaffoldModelCNNv1(model, classCount, data, imageDimension, amountOfChannels)
 	# return ScaffoldModelMLP(model, classCount, data, imageDimension, amountOfChannels)
 
-def ScaffoldModelMLP(model, classCount, data, imageDimension, amountOfCahnnels=3):
-	'''
-	Doesnt seem to be working
-	'''
-	dataDims = imageDimension * imageDimension * amountOfCahnnels
-	layerSizes = dataDims, dataDims * 2, dataDims * 2, classCount
-	layer = data
-	for i in range(len(layerSizes) - 1):
-		layer = brew.fc(model, layer, 'fc_%d' % i, dim_in=layerSizes[i], dim_out=layerSizes[i+1])
-		layer = brew.relu(model, layer, 'relu_%d' % i)
-	return brew.softmax(model, layer, 'softmax')
+def ScaffoldModelCNN_AlexNet(model, classCount, data, imageDimension, amountOfChannels):
+	brew.conv(model, data, 'conv1', amountOfChannels, 96, 11, stride=4, pad=0)
+	brew.relu(model, 'conv1', 'conv1')
+	brew.max_pool(model, 'norm1', 'pool1', kernel=3, stride=2, pad=0)
 
-def ScaffoldModelCNNv1(model, classCount, data, imageDimension, amountOfChannels=3):
-	# layer 1
-	conv1 = brew.conv(model, data, 'conv1', dim_in=amountOfChannels, dim_out=48, kernel=5, stride=1, pad=2)
-	h, w = computeImageDimensions(imageDimension, imageDimension, 5, 1, 2)
-	print 'size after conv1: ', h, w
-	maxPool1 = brew.max_pool(model, conv1, 'm_pool1', kernel=3, stride=2)
-	h, w = computeImageDimensions(h, w, 3, 2, 0)
-	print 'size after max_pool1: ', h, w
-	relu1 = brew.relu(model, maxPool1, 'relu1')
+	brew.conv(model, 'pool1', 'conv2', 48, 256, 5, stride=1, pad=2)
+	brew.relu(model, 'conv2', 'conv2')
+	brew.max_pool(model, 'norm2', 'pool2', kernel=3, stride=2, pad=0)
 
-	# layer 2
-	conv2 = brew.conv(model, relu1, 'conv2', 48, 48, kernel=5, stride=1, pad=2)
-	h, w = computeImageDimensions(h, w, 5, 1, 2)
-	print 'size after conv2: ', h, w
-	relu2 = brew.relu(model, conv2, 'relu2')
-	avgPool2 = brew.average_pool(model, relu2, 'avg_pool2', kernel=3, stride=2)
-	h, w = computeImageDimensions(h, w, 3, 2, 0)
-	print 'size after avg_pool2: ', h, w
+	brew.conv(model, 'pool2', 'conv3', 256, 384, 3, stride=1, pad=1)
+	brew.relu(model, 'conv3', 'conv3')
 
-	# layer 3
-	conv3 = brew.conv(model, avgPool2, 'conv3', 48, 64, kernel=5, stride=1, pad=2)
-	h, w = computeImageDimensions(h, w, 5, 1, 2)
-	print 'size after conv3: ', h, w
-	relu3 = brew.relu(model, conv3, 'relu3')
-	avgPool3 = brew.average_pool(model, relu3, 'avg_pool3', kernel=3, stride=2)
-	h, w = computeImageDimensions(h, w, 3, 2, 0)
-	print 'size after avg_pool3: ', h, w
+	brew.conv(model, 'conv3', 'conv4', 192, 384, 3, stride=1, pad=1)
+	brew.relu(model, 'conv4', 'conv4')
 
-	# last 2 fc layers
-	fc1 = brew.fc(model, avgPool3, 'fc1', dim_in=64*h*w, dim_out=64)
-	fc2 = brew.fc(model, fc1, 'fc2', dim_in=64, dim_out=classCount)
+	brew.conv(model, 'conv4', 'conv5', 192, 256, 3, stride=1, pad=1)
+	brew.relu(model, 'conv5', 'conv5')
+	brew.max_pool(model, 'conv5', 'pool5', kernel=3, stride=2, pad=1)
 
-	# format output
-	return brew.softmax(model, fc2, 'softmax')
+	brew.fc(model, 'pool5', 'fc6', 9216, 4096)
+	brew.relu(model, 'fc6', 'fc6')
+	brew.fc(model, 'fc6', 'fc7', 4096, 4096)
+	brew.relu(model, 'fc7', 'fc7')
+	brew.fc(model, 'fc7', 'fc8', 4096, 1000)
 
-def ScaffoldModelCNNv2(model, classCount, data, imageDimension, amountOfChannels=3):
-	# layer 1
-	conv1 = brew.conv(model, data, 'conv1', dim_in=amountOfChannels, dim_out=48, kernel=5, stride=1, pad=2)
-	h, w = computeImageDimensions(imageDimension, imageDimension, 5, 1, 2)
-	print 'size after conv1: ', h, w
-	max_pool1 = brew.max_pool(model, conv1, 'm_pool1', kernel=3, stride=2)
-	h, w = computeImageDimensions(h, w, 3, 2, 0)
-	print 'size after max_pool1: ', h, w
-	relu1 = brew.relu(model, max_pool1, 'relu1')
-
-	# layer 2
-	conv2 = brew.conv(model, relu1, 'conv2', 48, 48, kernel=5, stride=1, pad=2)
-	h, w = computeImageDimensions(h, w, 5, 1, 2)
-	print 'size after conv2: ', h, w
-	relu2 = brew.relu(model, conv2, 'relu2')
-	# avg_pool2 = brew.average_pool(model, relu2, 'avg_pool2', kernel=3, stride=2)
-	# h, w = compute_modified_img_dims(h, w, 3, 2, 0)
-	# print 'size after avg_pool2: ', h, w
-
-	# layer 3
-	conv3 = brew.conv(model, relu2, 'conv3', 48, 64, kernel=5, stride=1, pad=2)
-	h, w = computeImageDimensions(h, w, 5, 1, 2)
-	print 'size after conv3: ', h, w
-	relu3 = brew.relu(model, conv3, 'relu3')
-	# avg_pool3 = brew.average_pool(model, relu3, 'avg_pool3', kernel=3, stride=2)
-	# h, w = compute_modified_img_dims(h, w, 3, 2, 0)
-	# print 'size after avg_pool3: ', h, w
-
-	# layer 4
-	conv4 = brew.conv(model, relu3, 'conv4', 64, 64, kernel=5, stride=1, pad=0)
-	h, w = computeImageDimensions(h, w, 5, 1, 0)
-	print 'size after conv4: ', h, w
-	relu4 = brew.relu(model, conv4, 'relu4')
-	avg_pool4 = brew.average_pool(model, relu4, 'avg_pool4', kernel=3, stride=2)
-	h, w = computeImageDimensions(h, w, 3, 2, 0)
-	print 'size after avg_pool4: ', h, w
-
-	# layer 5
-	conv5 = brew.conv(model, avg_pool4, 'conv5', 64, 64, kernel=5, stride=1, pad=2)
-	h, w = computeImageDimensions(h, w, 5, 1, 2)
-	print 'size after conv5: ', h, w
-	relu5 = brew.relu(model, conv5, 'relu5')
-	avg_pool5 = brew.average_pool(model, relu5, 'avg_pool5', kernel=3, stride=2)
-	h, w = computeImageDimensions(h, w, 3, 2, 0)
-	print 'size after avg_pool5: ', h, w
-
-	# last 2 fc layers
-	fc1 = brew.fc(model, avg_pool5, 'fc1', dim_in=64*h*w, dim_out=64)
-	fc2 = brew.fc(model, fc1, 'fc2', dim_in=64, dim_out=classCount)
-
-	# format output
-	return brew.softmax(model, fc2, 'softmax')
-
-def ScaffoldModelCNNv3(model, classCount, data, imageDimension, amountOfChannels=3):
-	# layer 1
-	conv1 = brew.conv(model, data, 'conv1', dim_in=amountOfChannels, dim_out=48, kernel=5, stride=1, pad=2)
-	h, w = computeImageDimensions(imageDimension, imageDimension, 5, 1, 2)
-	print 'size after conv1: ', h, w
-	max_pool1 = brew.max_pool(model, conv1, 'm_pool1', kernel=3, stride=2)
-	h, w = computeImageDimensions(h, w, 3, 2, 0)
-	print 'size after max_pool1: ', h, w
-	relu1 = brew.relu(model, max_pool1, 'relu1')
-
-	conv2 = brew.conv(model, relu1, 'conv2', 48, 48, kernel=5, stride=1, pad=2)
-	h, w = computeImageDimensions(h, w, 5, 1, 2)
-	print 'size after conv2: ', h, w
-	relu2 = brew.relu(model, conv2, 'relu2')
-	maxPool2 = brew.max_pool(model, relu2, 'avg_pool2', kernel=2, stride=1)
-	h, w = computeImageDimensions(h, w, 2, 1, 0)
-	print 'size after maxPool2: ', h, w
-
-	conv3 = brew.conv(model, maxPool2, 'conv3', 48, 48, kernel=5, stride=1, pad=2)
-	h, w = computeImageDimensions(h, w, 5, 1, 2)
-	print 'size after conv3: ', h, w
-	maxPool3 = brew.max_pool(model, conv3, 'max_pool3', kernel=3, stride=1)
-	h, w = computeImageDimensions(h, w, 3, 1, 0)
-	print 'size after maxPool3: ', h, w
-	relu3 = brew.relu(model, maxPool3, 'relu3')
-
-	conv4 = brew.conv(model, relu3, 'conv4', 48, 64, kernel=5, stride=2, pad=2)
-	h, w = computeImageDimensions(h, w, 5, 2, 2)
-	print 'size after conv4: ', h, w
-	relu4 = brew.relu(model, conv4, 'rolu4')
-	maxPool4 = brew.max_pool(model, relu4, 'avg_pool4', kernel=3, stride=2)
-	h, w = computeImageDimensions(h, w, 3, 2, 0)
-	print 'size after maxPool4: ', h, w
-
-	# last 2 fc layers
-	fc1 = brew.fc(model, maxPool4, 'fc1', dim_in=64*h*w, dim_out=64)
-	fc2 = brew.fc(model, fc1, 'fc2', dim_in=64, dim_out=classCount)
-
-	# format output
-	return brew.softmax(model, fc2, 'softmax')
-
-def ScaffoldModelCNNv4(model, classCount, data, imageDimension, amountOfChannels=3):
-	conv1 = brew.conv(model, data, 'conv1', amountOfChannels, 16, 3, stride=1, pad=1)
-	h, w = computeImageDimensions(imageDimension, imageDimension, 3, 1, 1)
-	print 'size: ', h, w
-	relu1 = brew.relu(model, conv1, 'relu1')
-
-	conv2 = brew.conv(model, relu1, 'conv2', 16, 16, 3, stride=1, pad=1)
-	h, w = computeImageDimensions(h, w, 3, 1, 1)
-	print 'size: ', h, w
-	relu2 = brew.relu(model, conv2, 'relu2')
-
-	conv3 = brew.conv(model, relu2, 'conv3', 16, 16, 5, stride=1, pad=2)
-	h, w = computeImageDimensions(h, w, 5, 1, 2)
-	print 'size: ', h, w
-	maxPool3 = brew.max_pool(model, conv3, 'maxPool3', kernel=2, stride=2)
-	h, w = computeImageDimensions(h, w, 2, 2, 0)
-	print 'size: ', h, w
-
-	conv4 = brew.conv(model, maxPool3, 'conv4', 16, 32, 5, stride=1, pad=1)
-	h, w = computeImageDimensions(h, w, 5, 1, 1)
-	print 'size: ', h, w
-	relu4 = brew.relu(model, conv4, 'relu4')
-
-	conv5 = brew.conv(model, relu4, 'conv5', 32, 32, 5, stride=1, pad=1)
-	h, w = computeImageDimensions(h, w, 5, 1, 1)
-	print 'size: ', h, w
-	relu5 = brew.relu(model, conv5, 'relu5')
-	maxPool5 = brew.max_pool(model, relu5, 'maxPool5', kernel=2, stride=2)
-	h, w = computeImageDimensions(h, w, 2, 2, 0)
-	print 'size: ', h, w
-
-	conv6 = brew.conv(model, maxPool5, 'conv6', 32, 32, 5, stride=1, pad=1)
-	h, w = computeImageDimensions(h, w, 5, 1, 1)
-	print 'size: ', h, w
-	relu6 = brew.relu(model, conv6, 'relu6')
-
-	conv7 = brew.conv(model, relu6, 'conv7', 32, 32, 5, stride=1, pad=1)
-	h, w = computeImageDimensions(h, w, 5, 1, 1)
-	print 'size: ', h, w
-	relu7 = brew.relu(model, conv7, 'relu7')
-
-	conv8 = brew.conv(model, relu7, 'conv8', 32, 64, 5, stride=1, pad=1)
-	h, w = computeImageDimensions(h, w, 5, 1, 1)
-	print 'size: ', h, w
-	maxPool8 = brew.max_pool(model, conv8, 'maxPool8', kernel=2, stride=2)
-	h, w = computeImageDimensions(h, w, 2, 2, 0)
-	print 'size: ', h, w
-	relu8 = brew.relu(model, maxPool8, 'relu8')
-
-	conv9 = brew.conv(model, relu8, 'conv9', 64, 64, 1, stride=1)
-	h, w = computeImageDimensions(h, w, 1, 1, 0)
-	print 'size: ', h, w
-	relu9 = brew.relu(model, conv9, 'relu9')
-
-	fc10 = brew.fc(model, relu9, 'fc10', dim_in=64*h*w, dim_out=64)
-	fc11 = brew.fc(model, fc10, 'fc11', dim_in=64, dim_out=32)
-	fc12 = brew.fc(model, fc11, 'fc12', dim_in=32, dim_out=classCount)
-
-	return brew.softmax(model, fc12, 'softmax')
-
-def ScaffoldModelCNNv5(model, classCount, data, imageDimension, amountOfChannels=3):
-	conv1 = brew.conv(model, data, 'conv1', amountOfChannels, 96, kernel=5, stride=1, pad=2)
-	h, w = computeImageDimensions(imageDimension, imageDimension, 5, 1, 2)
-	print 'size: ', h, w
-	maxPool1 = brew.max_pool(model, conv1, 'max_pool1', kernel=2, stride=2)
-	h, w = computeImageDimensions(h, w, 2, 2, 0)
-	print 'size: ', h, w
-	relu1 = brew.relu(model, maxPool1, 'relu1')
-
-	conv2 = brew.conv(model, relu1, 'conv2', 96, 256, kernel=5, stride=1, pad=2)
-	h, w = computeImageDimensions(h, w, 5, 1, 2)
-	print 'size: ', h, w
-	maxPool2 = brew.max_pool(model, conv2, 'max_pool2', kernel=2, stride=2)
-	h, w = computeImageDimensions(h, w, 2, 2, 0)
-	print 'size: ', h, w
-	relu2 = brew.relu(model, maxPool2, 'relu2')
-
-	conv3 = brew.conv(model, relu2, 'conv3', 256, 384, kernel=5, stride=1, pad=2)
-	h, w = computeImageDimensions(h, w, 5, 1, 2)
-	print 'size: ', h, w
-
-	conv4 = brew.conv(model, conv3, 'conv4', 384, 384, kernel=5, stride=1, pad=2)
-	h, w = computeImageDimensions(h, w, 5, 1, 2)
-	print 'size: ', h, w
-
-	conv5 = brew.conv(model, conv4, 'conv5', 384, 256, kernel=5, stride=1, pad=2)
-	h, w = computeImageDimensions(h, w, 5, 1, 2)
-	print 'size: ', h, w
-	maxPool5 = brew.max_pool(model, conv5, 'max_pool5', kernel=2, stride=2)
-	h, w = computeImageDimensions(h, w, 2, 2, 0)
-	print 'size: ', h, w
-
-	fc6 = brew.fc(model, maxPool5, 'fc6', dim_in=256*h*w, dim_out=128)
-	fc7 = brew.fc(model, fc6, 'fc7', dim_in=128, dim_out=64)
-	fc8 = brew.fc(model, fc7, 'fc8', dim_in=64, dim_out=classCount)
-
-	return brew.softmax(model, fc8, 'softmax')
-
-def ScaffoldModellCNNv6(model, classCount, data, imageDimension, amountOfChannels=3):
-	conv1 = brew.conv(model,'data', 'conv1', amountOfChannels, 20, kernel=5, stride=1, pad=0)
-	imgDim = computeImageDimensions(imageDimension, imageDimension, 5, 1, 0)[0]
-	pool1 = brew.max_pool(model, conv1, 'pool1', kernel=2, stride=2)
-
-	conv2 = brew.conv(model, pool1, 'conv2', 20, 50, kernel=5, stride=1, pad=0)
-	imgDim = computeImageDimensions(imgDim, imgDim, 5, 1, 0)[0]
-	pool2 = brew.max_pool(model, conv2, 'pool2', kernel=2, stride=2)
-
-	fc3 = brew.fc(model, pool2, 'fc3', dim_in=50 * (imgDim ** 2), dim_out=500)
-	fcRelu3 = brew.relu(model, fc3, 'fc_relu')
-	pred = brew.fc(model, fcRelu3, 'pred', dim_in=500, dim_out=classCount)
-	return brew.softmax(model, pred, 'softmax')
-
-def ScaffoldModelCNNRepetitor(model, classCount, data, imageDimension, amountOfChannels=3, isTest=0):
-	dims = amountOfChannels, 8, 10, 12
-
-	convKernel = 3
-	convStride = 1
-	convPad = 1
-
-	poolingKernel = 2
-	poolingStride = 2
-
-	imageDim = imageDimension
-	poolingFrom = 5
-	layer = data
-	for i in range(len(dims) - 1):
-		# if i == 1:
-		# 	layer = brew.dropout(model, layer, 'drop_%d' % i, ratio=0.4, is_test=isTest)
-
-		layer = brew.conv(
-			model, layer, 'conv_%d' % i, dim_in=dims[i],
-			dim_out=dims[i + 1], kernel=convKernel, stride=convStride, pad=convPad)
-		imageDim = computeImageDimensions(imageDim, imageDim, convKernel, convStride, convPad)[0]
-		layer = brew.relu(model, layer, 'relu_%d' % i)
-		if i > poolingFrom:
-			layer = brew.average_pool(model, layer, 'avg_pool_%d' % i, kernel=poolingKernel, stride=poolingStride)
-			imageDim = computeImageDimensions(imageDim, imageDim, poolingKernel, poolingStride, 0)[0]
-
-	fc = brew.fc(model, layer, 'fc_%d' % len(dims), dim_in=(imageDim ** 2) * dims[-1], dim_out=classCount)
-	return brew.softmax(model, fc, 'softmax')
+	return brew.softmax(model, 'fc8', 'softmax')
 
 def ScaffoldModelBackpropagation(model, softmax, label, learningRate):
-	# loss function - tells how wrong the prediction was
+	# loss function - tells imageSizeow wrong the prediction was
 	crossEntropy = model.LabelCrossEntropy([softmax, label], 'cross_entropy')
 	# expected loss (how to find out more on this step)
 	loss = model.AveragedLoss(crossEntropy, 'loss')
@@ -340,29 +84,16 @@ def ScaffoldModelBackpropagation(model, softmax, label, learningRate):
 		# weight_decay=0.004
 	)
 
-def ScaffoldModelTrainingOperators(model, softmax, label, learningRate):
-	crossEntropy = model.LabelCrossEntropy([softmax, label], 'cross_entropy')
-	loss = model.AveragedLoss(crossEntropy, 'loss')
-	ScaffoldModelAccuracyMeter(model, softmax, label)
-	model.AddGradientOperators([loss])
-	ITER = brew.iter(model, 'iter')
-	learningRate = model.LearningRate(
-		ITER, 'lr', base_lr=learningRate, policy='step', stepsize=1, gamma=0.999
-	)
-	one = model.param_init_net.ConstantFill([], 'one', shape=[1], value=1.0)
-	for param in model.params:
-		paramGrad = model.param_to_grad[param]
-		model.WeightedSum([param, one, paramGrad, learningRate], param)
-
-def ScaffoldModelTrainingOPeratorsSqueezenet(model, softmax, label, learningRate):
+def ScaffoldModelTrainingOperators(model, softmax, label, learningRate, devOps=None):
+	# with core.DeviceScope(core.DeviceOption(c2p2.PROTO_CUDA, 0)):
 	xent = model.LabelCrossEntropy([softmax, label], "xent")
 	loss = model.AveragedLoss(xent, "loss")
 	ScaffoldModelAccuracyMeter(model, softmax, label)
 	model.AddGradientOperators([loss])
 	opt = optimizer.build_sgd(model, base_learning_rate=learningRate)
 	for param in model.GetOptimizationParamInfo():
-			opt(model.net, model.param_init_net, param)
-
+		opt(model.net, model.param_init_net, param)
+		
 def ScaffoldModelAccuracyMeter(model, softmax, label):
 	return brew.accuracy(model, [softmax, label], 'accuracy')
 
@@ -392,8 +123,8 @@ def InscribeDeviceOptionsToModel(model, deviceOption):
 		for op in netDef.op:
 			# Some operators are CPU-only.
 			if op.output[0] not in ("optimizer_iteration", "iteration_mutex"):
-						op.ClearField("device_option")
-						op.ClearField("engine")
+				op.ClearField("device_option")
+				op.ClearField("engine")
 		setattr(model, net, core.Net(netDef))
 
 def CreateModel(
@@ -408,28 +139,20 @@ def CreateModel(
 	isTest=0):
 	argScope = {
 		'order': 'NCHW',
-		'use_cudnn': 1
+		'use_cudnn': True
 	}
-	with core.DeviceScope(core.DeviceOption(caffe2_pb2.CUDA, 0)):
+	with core.DeviceScope(core.DeviceOption(c2p2.PROTO_CUDA, 0)):
 		model = model_helper.ModelHelper(name=name, arg_scope=argScope, init_params=initParams)
-
-		# model.net.RunAllOnGpu()
-		# model.param_init_net.RunAllOnGpu()
-
 		# data input
 		data, label = ScaffoldModelInput(model, lmdbPath, batchSize)
 		# CNN
 		softmax = getCnnModel(model, labelsCount, data, imageDimension, 3, isTest=isTest)
-
 		if learningRate != None:
 			ScaffoldModelBackpropagation(model, softmax, 'label', learningRate)
 			# ScaffoldModelTrainingOperators(model, softmax, label, learningRate)
-
 		if scaffoldAccuracy:
 			ScaffoldModelAccuracyMeter(model, softmax, label)
-
 		# ScaffoldModelBackupOperators(model)
-
 	return model
 
 def CreateDeployModel(name, data, labelsCount, imageDimension):
@@ -441,14 +164,11 @@ def CreateDeployModel(name, data, labelsCount, imageDimension):
 
 	return model
 
-def InitModel(model):
+def InitModel(model, overwrite=True):
 	workspace.RunNetOnce(model.param_init_net)
-	workspace.CreateNet(model.net)
+	workspace.CreateNet(model.net, overwrite=overwrite)
 
-def RunModel(model, iters, logEvery, statisticsHandler=None, setupHandler=None):
-	workspace.RunNetOnce(model.param_init_net)
-	workspace.CreateNet(model.net, overwrite=True)
-
+def RunModel(model, iters, logEvery, beforeExecution=None, statisticsHandler=None, setupHandler=None):
 	if type(setupHandler) != type(None):
 		setupHandler()
 
@@ -457,17 +177,20 @@ def RunModel(model, iters, logEvery, statisticsHandler=None, setupHandler=None):
 	iterList = np.zeros(iters/logEvery)
 	valCount = 0
 
-	for i in range(iters/logEvery):
-		workspace.RunNet(model.net, logEvery)
-		if type(statisticsHandler) != type(None):
-			statisticsHandler(i * logEvery)
+	for i in range(iters):
+		if beforeExecution != None:
+			beforeExecution(i)
+		workspace.RunNet(model.net)
 
-		acc[valCount] = workspace.FetchBlob('accuracy')
-		loss[valCount] = workspace.FetchBlob('loss')
-		iterList[valCount] = i
+		if i % logEvery == 0 and type(statisticsHandler) != type(None):
+			statisticsHandler(i)
 
-		valCount += 1
-	
+			acc[valCount] = workspace.FetchBlob('accuracy')
+			loss[valCount] = workspace.FetchBlob('loss')
+			iterList[valCount] = i
+
+			valCount += 1
+
 	return acc, loss, iterList
 
 def SaveModel(workspace, deployModel, initNetPath, predictNetPath):
@@ -499,14 +222,13 @@ def LoadTrainModel(name,
 
 	model = model_helper.ModelHelper(name, init_params=False, arg_scope={
 	
-		'order': 'NCHW'
-	})
+		'order': 'NCHW'})
 
 	data, _ = ScaffoldModelInput(model, lmdbPath, batchSize)
 
 	softmax = getCnnModel(model, classCount, data, imageDimension, 3)
 
-	init_net_pb = caffe2_pb2.NetDef()
+	init_net_pb = c2p2.NetDef()
 	with open(initNetPath, 'rb') as f:
 		init_net_pb.ParseFromString(f.read())
 	model.param_init_net = model.param_init_net.AppendNet(core.Net(init_net_pb))
@@ -519,44 +241,138 @@ def LoadTrainModel(name,
 
 	return model
 
-def LoadPretrainedSqueezenetModel(name,
-	lmdbPath, classCount, batchSize, imageDimension,
-	initNetPath, predictNetPath, deviceOpts, outputDims, paramsToLearn = None,
-	learningRate=10**-2):
+def LoadCustomSqueezenetModel(name,
+	initNetPath, predictNetPath, deviceOps, argScope,
+	learningRate=10**-2, freezeOpsUntil='conv10'):
 
-	model = model_helper.ModelHelper(name)
+	model = model_helper.ModelHelper(name, arg_scope=argScope, init_params=False)
 
-	predictNetPb = caffe2_pb2.NetDef()
+	predNetPb = c2p2.NetDef()
 	with open(predictNetPath, 'rb') as f:
-		predictNetPb.ParseFromString(f.read())
+		predNetPb.ParseFromString(f.read())
 	
-	initNetPb = caffe2_pb2.NetDef()
+	initNetPb = c2p2.NetDef()
 	with open(initNetPath, 'rb') as f:
 		initNetPb.ParseFromString(f.read())
 
-	with core.DeviceScope(deviceOpts):
-		data, label = ScaffoldModelInput(model, lmdbPath, batchSize)
+	opsFreezed = True
+	for op in initNetPb.op:
+		paramName = op.output[0]
+		if opsFreezed and freezeOpsUntil in paramName:
+			opsFreezed = False
+		if not opsFreezed and paramName.endswith('_w') or paramName.endswith('_b'):
+			tags = (ParameterTags.WEIGHT if paramName.endswith('_w') else ParameterTags.BIAS)
+			model.create_param(param_name=paramName, shape=op.arg[0], initializer=initializers.ExternalInitializer(), tags=tags)
+	
+	# removing conv10_w and conv10_b from init net
+	# initNetPb.op.pop(51)
+	# initNetPb.op.pop(50)
 
-		model.net = core.Net(predictNetPb)
-		# dims param has wrong values...
-		model.Squeeze('softmaxout', 'softmax', dims=[2, 3])
+	model.param_init_net = core.Net(initNetPb)
+	model.net = core.Net(predNetPb)
+	model.Squeeze('softmaxout', 'softmax', dims=[2, 3])
 
-		for op in initNetPb.op:
-			paramName = op.output[0]
-			if paramsToLearn == None or paramName in paramsToLearn:
-				tags = (ParameterTags.WEIGHT if paramName.endswith('_w') else ParameterTags.BIAS)
-				model.create_param(param_name=paramName, shape=op.arg[0], initializer=initializers.ExternalInitializer(), tags=tags)
-		
-		# 'removing conv10_w and conv10_b' from init net
-		initNetPb.op.pop(51)
-		initNetPb.op.pop(50)
+	ScaffoldModelTrainingOperators(model, 'softmax', 'label', learningRate)
 
-		# reinitialize conv10
-		model.param_init_net = core.Net(initNetPb)
-		model.param_init_net.XavierFill([], 'conv10_w', shape=[classCount, 512, 1, 1])
-		model.param_init_net.ConstantFill([], 'conv10_b', shape=[classCount])
+	return model, predNetPb
 
-		ScaffoldModelTrainingOPeratorsSqueezenet(model, 'softmax', label, learningRate)
-		InscribeDeviceOptionsToModel(model, deviceOpts)
+def TranslateSqueezenetModel(name, classCount, initNetPath, predictNetPath, devOps, argScope,
+	learningRate=10**-2):
 
-	return model
+	predNetPb = c2p2.NetDef()
+	with open(predictNetPath, 'rb') as f:
+		predNetPb.ParseFromString(f.read())
+	
+	initNetPb = c2p2.NetDef()
+	with open(initNetPath, 'rb') as f:
+		initNetPb.ParseFromString(f.read())
+
+	model = model_helper.ModelHelper(name, arg_scope=argScope, init_params=False)
+
+	for op in initNetPb.op:
+		if op.output[0] in ['conv10_w', 'conv10_b']:
+			tag = (ParameterTags.WEIGHT if op.output[0].endswith('_w') else ParameterTags.BIAS)
+			# create params inside model
+			model.create_param(op.output[0], op.arg[0], initializers.ExternalInitializer(), tags=tag)
+	
+	# remove conv10_w and conv10_b ops from protobuf - ids -> 50,51
+	# these ops were added to the model below -> XavierFill, ConstantFill
+	initNetPb.op.pop(50)
+	initNetPb.op.pop(50)
+
+	fixInPlaceOps(predNetPb.op)
+
+	model.net = core.Net(predNetPb)
+	model.Squeeze('softmaxout', 'softmax', dims=[2, 3])
+
+	model.param_init_net = core.Net(initNetPb)
+	model.param_init_net.XavierFill([], 'conv10_w', shape=[classCount, 512, 1, 1])
+	model.param_init_net.ConstantFill([], 'conv10_b', shape=[classCount])
+
+	ScaffoldModelTrainingOperators(model, 'softmax', 'label', learningRate)
+
+	# InscribeDeviceOptionsToModel(model, devOps)
+
+	return model, core.Net(predNetPb)
+
+def TranslateAlexNetOrVGG19(name, classCount, initNetPath, predictNetPath, devOps, argScope, learningRate=10**-2):
+	model = model_helper.ModelHelper(name, arg_scope=argScope, init_params=False)
+
+	initNetPb = c2p2.NetDef()
+	with open(initNetPath, 'rb') as f:
+		initNetPb.ParseFromString(f.read())
+
+	for op in initNetPb.op:
+		if op.output[0] == 'fc8_w':
+			for arg in op.arg:
+				if arg.name == 'shape':
+					arg.ClearField('ints')
+					arg.ints.extend([classCount, 4096])
+				elif arg.name == 'values':
+					arg.ClearField('floats')
+					arg.floats.extend(np.random.normal(0, .1, 4096*classCount)) # gaussian curve
+		elif op.output[0] == 'fc8_b':
+			for arg in op.arg:
+				if arg.name == 'shape':
+					arg.ClearField('ints')
+					arg.ints.extend([classCount])
+				elif arg.name == 'values':
+					arg.ClearField('floats')
+					arg.floats.extend(np.zeros((classCount,)).astype(np.float32))
+
+	for op in initNetPb.op:
+		if op.output[0] in ['fc8_w', 'fc8_b']:
+			tag = (ParameterTags.BIAS if op.output[0].endswith('_b') else ParameterTags.WEIGHT)
+			model.create_param(op.output[0], op.arg[0], initializers.ExternalInitializer(), tags=tag)
+
+	model.param_init_net = core.Net(initNetPb)
+
+	predNetPb = c2p2.NetDef()
+	with open(predictNetPath, 'rb') as f:
+		predNetPb.ParseFromString(f.read())
+
+	fixInPlaceOps(predNetPb.op)
+	model.net = core.Net(predNetPb)
+
+	ScaffoldModelTrainingOperators(model, 'prob', 'label', learningRate, devOps)
+
+	return model, predNetPb
+
+def fixInPlaceOps(ops):
+	opsLen = len(ops)
+	i = 0
+	while i < opsLen:
+		op = ops[i]
+		if op.input[0] == op.output[0]:
+			i = _fixInPlaceOpsRecursive(ops, opsLen, i, op.output[0])
+		i = i + 1
+
+def _fixInPlaceOpsRecursive(ops, opsLen, index, originalOpName, iteration=0):
+	newOpName = '%s___%d' % (originalOpName, iteration)
+	if ops[index].output[0] == originalOpName:
+		ops[index].output[0] = newOpName
+	if iteration != 0:
+		ops[index].input[0] = '%s___%d' % (originalOpName, iteration - 1)
+	if index + 1 < opsLen and ops[index + 1].input[0] == originalOpName:
+		index = _fixInPlaceOpsRecursive(ops, opsLen, index + 1, originalOpName, iteration + 1)
+	return index

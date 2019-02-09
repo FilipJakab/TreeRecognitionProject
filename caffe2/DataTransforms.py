@@ -47,10 +47,9 @@ def ChangeBrightness(img, value):
 
 	return cv2.cvtColor(cv2.merge((h, s, v)), cv2.COLOR_HSV2BGR)
 
+
+AUGMENT_AMPLIFIER = 12
 def AugmentImage(img, brightnessIndex=64, maxDeviation=32, deviationStep=8):
-	'''
-	For now this method creates 12 * (((maxDeviation / deviationStep) + 1) ** 2)
-	'''
 
 	deviatedImage = np.zeros((img.shape[0] + maxDeviation, img.shape[1] + maxDeviation, img.shape[2]), dtype=np.uint8)
 	startX = (deviatedImage.shape[0]-img.shape[0])/2
@@ -67,6 +66,8 @@ def AugmentImage(img, brightnessIndex=64, maxDeviation=32, deviationStep=8):
 			hFlipped = np.flipud(currentDeviatedImage)
 			hvFlipped = np.fliplr(hFlipped)
 
+			# when this is changed AUGMENT_AMPLIFIER needs to be changed too
+			# Its value is amount of yielded items
 			yield currentDeviatedImage
 			yield vFlipped
 			yield hFlipped
@@ -79,3 +80,6 @@ def AugmentImage(img, brightnessIndex=64, maxDeviation=32, deviationStep=8):
 			yield np.array(ChangeBrightness(hFlipped, -brightnessIndex))
 			yield np.array(ChangeBrightness(hvFlipped, brightnessIndex))
 			yield np.array(ChangeBrightness(hvFlipped, -brightnessIndex))
+
+def CalculateAugmentRatio(maxDeviation=32, deviationStep=8):
+	return AUGMENT_AMPLIFIER * (((maxDeviation / deviationStep) + 1) ** 2)

@@ -1,5 +1,5 @@
 imageSquaredDimension = 96
-batchSize = 48
+batchSize = 72
 learningRate = 0.001
 baseFolder = '/home/filip/workbench/tree-images'
 trainLmdbPath = baseFolder + '/workspace/lmdb/train-ex-augmented-dataset-lmdb-{}'.format(imageSquaredDimension)
