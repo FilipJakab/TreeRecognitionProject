@@ -5,6 +5,7 @@
 
 import sys
 from os.path import isfile
+from os import walk
 import numpy as np
 
 from caffe2.python.onnx import backend
@@ -14,7 +15,8 @@ from PIL import Image
 
 from constants import (
 	modelDeployParamsPath,
-	deployTransformationFlow
+	productionTransformationFlow,
+	dataDir
 )
 
 if len(sys.argv) != 2 or not isfile(sys.argv[1]):
@@ -23,9 +25,12 @@ if len(sys.argv) != 2 or not isfile(sys.argv[1]):
 
 onnxModel = onnx.load(modelDeployParamsPath)
 onnx.checker.check_model(onnxModel)
-
 pred = backend.prepare(onnxModel, device='CUDA:0')
 
-prepedImage = deployTransformationFlow(Image.open(sys.argv[1]))
+prepedImage = productionTransformationFlow(Image.open(sys.argv[1]))
 
-pred.run(np.array(prepedImage, dtype=np.float32))
+output = pred.run(np.array(prepedImage, dtype=np.float32))
+
+print output
+
+# labels = walk(dataDir)[1]
