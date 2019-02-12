@@ -4,7 +4,7 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using NLog;
+using Microsoft.Extensions.Logging;
 using PublicApi.Models;
 using PublicApi.Resources;
 
@@ -12,7 +12,7 @@ namespace PublicApi.Helpers
 {
 	public static class RequestHandler
 	{
-		public static IActionResult Handle<T>(Func<Guid, Logger, T> what, HttpResponse response, Logger logger)
+		public static IActionResult Handle<T>(Func<Guid, ILogger, T> what, HttpResponse response, ILogger logger)
 		{
 			Guid correlationId = Guid.NewGuid();
 
@@ -36,17 +36,15 @@ namespace PublicApi.Helpers
 			}
 			catch (SqlException ex)
 			{
-				logger.Error(ex, $"{correlationId} - Error while communicating with Database");
-
-				result.ErrorMessage = ResponseErrorMessages.SqlError;
+				logger.LogError(ex, $"{correlationId} - Error while communicating with Database");
 			}
 			catch (Exception ex)
 			{
-				logger.Error(ex, $"{correlationId} - Error occured while processing request.");
-
-				result.ErrorMessage = ResponseErrorMessages.UnknownError;
+				logger.LogError(ex, $"{correlationId} - Error occured while processing request.");
 			}
 
+			if (!result.IsOk)
+				result.ErrorMessage = CommonMessages.UnknownError;
 			result.Metrics.TimeTaken = watch.Elapsed;
 
 			response.StatusCode = result.IsOk

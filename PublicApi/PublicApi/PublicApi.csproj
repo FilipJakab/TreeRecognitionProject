@@ -5,22 +5,22 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Resources\ResponseErrorMessages.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>ResponseErrorMessages.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
     <Folder Include="wwwroot\" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Flurl" Version="2.8.0" />
+    <PackageReference Include="Flurl.Http" Version="2.4.0" />
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
-    <PackageReference Include="NLog" Version="4.6.0-rc1" />
-    <PackageReference Include="NLog.Config" Version="4.6.0-rc1" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+    <PackageReference Include="Serilog" Version="2.8.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="2.1.2-dev-00028" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="2.0.1-dev-00009" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="3.0.2-dev-00187" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="3.1.2-dev-00788" />
+    <PackageReference Include="Serilog.Sinks.Debug" Version="1.0.2-dev-00020" />
+    <PackageReference Include="Serilog.Sinks.File" Version="4.1.0-dev-00806" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,12 +28,20 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="Resources\ResponseErrorMessages.cs.resx">
+    <Compile Update="Resources\CommonMessages.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CommonMessages.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\CommonMessages.cs-CZ.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
-    <EmbeddedResource Update="Resources\ResponseErrorMessages.resx">
+    <EmbeddedResource Update="Resources\CommonMessages.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
-      <LastGenOutput>ResponseErrorMessages.Designer.cs</LastGenOutput>
+      <LastGenOutput>CommonMessages.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
 

@@ -117,10 +117,7 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="SqlError" xml:space="preserve">
-    <value>Nastala chyba během komunikace s databázovým serverem</value>
-  </data>
   <data name="UnknownError" xml:space="preserve">
-    <value>Nastala neočekávaná chyba při zpracovávání vašeho dotazu.</value>
+    <value>Nastala chyba během zpracovávání vašeho požadavku</value>
   </data>
 </root>

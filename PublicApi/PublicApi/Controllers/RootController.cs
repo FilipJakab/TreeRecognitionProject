@@ -6,38 +6,47 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using NLog;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using PublicApi.Helpers;
 using PublicApi.Managers;
+using PublicApi.Models;
+using PublicApi.Models.Configurations;
 using static PublicApi.Helpers.RequestHandler;
 
 namespace PublicApi.Controllers
 {
-	[Route("api/[controller]")]
+	[Route("api")]
 	[ApiController]
 	public class RootController : ControllerBase
 	{
-		private readonly IConfiguration configuration;
+		private readonly IOptions<Urls> urlsOptions;
+		private readonly ImageManager manager;
+		private readonly ILogger<RootController> logger;
 
-		public RootController(IConfiguration configuration)
+		public RootController(ILogger<RootController> logger, IOptions<Urls> urlsOptions, ImageManager manager)
 		{
-			this.configuration = configuration;
+			this.urlsOptions = urlsOptions;
+			this.manager = manager;
+			this.logger = logger;
 		}
-
-		private readonly Logger logger = LogManager.GetCurrentClassLogger();
 
 		[HttpPost]
 		[AllowAnonymous]
-		public IActionResult Post([FromBody] IFormFile image)
+		public IActionResult Post([FromForm(Name = "image")] IFormFile image)
 		{
-			return Handle(correlationId =>
+			return Handle((correlationId, logger) =>
 			{
+				logger.LogInformation($"{correlationId} - POST request for image processing");
 
-				ImageManager manager = new ImageManager();
+				Task<PredictionResultsResponseModel> predictionsForImage = manager.GetPredictionsForImage(
+					correlationId,
+					urlsOptions.Value.DeepLearningApiUrl,
+					image.OpenReadStream(),
+					image.FileName);
+				predictionsForImage.Wait();
 
-				logger.Info($"{correlationId} - POST request for image processing");
-
-				manager.GetPredictionsForImage(configuration.GetDeepLearningUrl(), image.OpenReadStream());
+				return predictionsForImage.Result;
 			}, Response, logger);
 		}
 	}

@@ -22,14 +22,14 @@ namespace PublicApi.Resources {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    public class ResponseErrorMessages {
+    public class CommonMessages {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal ResponseErrorMessages() {
+        internal CommonMessages() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace PublicApi.Resources {
         public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("PublicApi.Resources.ResponseErrorMessages", typeof(ResponseErrorMessages).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("PublicApi.Resources.CommonMessages", typeof(CommonMessages).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,16 +61,7 @@ namespace PublicApi.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Error occured when communicating with database.
-        /// </summary>
-        public static string SqlError {
-            get {
-                return ResourceManager.GetString("SqlError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Unhandled error occured during processing your request.
+        ///   Looks up a localized string similar to Unexpected error uccred during processing your request.
         /// </summary>
         public static string UnknownError {
             get {
