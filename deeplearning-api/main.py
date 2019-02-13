@@ -1,46 +1,63 @@
-from __future__ import print_function
-import time
-import os
+# from __future__ import print_function
+import os, sys, time, json
+
+import numpy as np
+import io, skimage.io as io
 
 from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
 from werkzeug.utils import secure_filename
 
+# append my scripts to path if they are not already there
+myPtorchScriptsPath = os.path.expanduser('../pytorch')
+if myPtorchScriptsPath not in sys.path:
+	sys.path.append(myPtorchScriptsPath)
+
+# custom
+from runtimePredictCaffe2 import Run
+from functionImplementations import SoftmaxFn
+from constants import datasetLabelsPath
+
 app = Flask(__name__)
 # set folder for uploading images
-app.config['UPLOAD_FOLDER'] = './upload_dir'
-app.config['ALLOWED_IMAGE_EXETENSION'] = set(['png', 'jpg', 'jpeg'])
+# app.config['UPLOAD_FOLDER'] = './upload_dir'
+# app.config['ALLOWED_IMAGE_EXETENSION'] = set(['png', 'jpg', 'jpeg'])
 
 api = Api(app)
 
+def InsertLabels(singleImagePredictions):
+	with open(datasetLabelsPath, 'r') as f:
+		labels = json.load(f)
+	result = {}
+	for label in labels.keys():
+		result[label] = singleImagePredictions[labels[label]]
+
+	return result
+
 class RootController(Resource):
-	def post(self):
-		response_obj = { 'message': '', 'isOk': False }
-		print('request.files: ', request.files)
-		if not ('image' in request.files.keys()):
-			print('request doesnt meet correct structure -> request doesnt contain image part')
-			response_obj['message'] = 'request doesnt contain file part named "image"'
-			return response_obj
+	def get(self):
+		responseObj = {
+			'data': '',
+			'isOk': False,
+			'taken': -1
+		}
 
-		image = request.files['image']
+		imagePath = request.args['image']
 
-		if image and image.filename == '':
-			print('request format error -> image name is empty')
-			response_obj['message'] = 'image filename is empty'
-			return response_obj
+		if not os.path.isfile(imagePath):
+			print 'file at "%s" was not found..' % imagePath
+			responseObj['data'] = 'Specified file path "%s" was not found' % imagePath
+			return responseObj
 
-		image_filename = secure_filename(image.filename)
+		since = time.time()
+		responseObj['data'] = InsertLabels(SoftmaxFn(Run(imagePath)).tolist())
+		responseObj['taken'] = (time.time() - since)
 
-		if not self.check_file_extension(image_filename):
-			print('image doesnt contain valid file extension')
-			response_obj['message'] = 'image doesnt contain valid file extension'
-			return response_obj
+		print responseObj['data']
 
-		image.save(os.path.join(app.config['UPLOAD_FOLDER'], image_filename))
-		response_obj['message'] = 'Successful'
-		response_obj['isOk'] = True
+		responseObj['isOk'] = True
+		return responseObj
 
-		return response_obj
 	def check_file_extension(self, filename):
 		return filename.split('.')[-1] in app.config['ALLOWED_IMAGE_EXETENSION']
 

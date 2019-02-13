@@ -4,9 +4,15 @@ namespace PublicApi.Models
 {
 	public class PredictionResultsResponseModel
 	{
-		public IDictionary<string, int> Predictions { get; set; }
+		/// <summary>
+		/// Key is string representation of label and Value is confidence in percentages (0.0 to 1.0) 
+		/// </summary>
+		public Dictionary<string, float> ImagePredictions { get; set; }
 
-		public Metrics Metrics { get; set; }
+		/// <summary>
+		/// Representation of timespan in seconds
+		/// </summary>
+		public float Taken { get; set; }
 
 		public bool IsOk { get; set; }
 	}

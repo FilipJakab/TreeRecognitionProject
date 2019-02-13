@@ -37,10 +37,13 @@ namespace PublicApi.Helpers
 			catch (SqlException ex)
 			{
 				logger.LogError(ex, $"{correlationId} - Error while communicating with Database");
+				result.ErrorMessage = ex.Message;
 			}
 			catch (Exception ex)
 			{
 				logger.LogError(ex, $"{correlationId} - Error occured while processing request.");
+				// result.ErrorMessage = ex.Message;
+				result.Exception = ex;
 			}
 
 			if (!result.IsOk)

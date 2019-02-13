@@ -8,6 +8,7 @@ from os.path import isfile
 from os import walk
 import numpy as np
 
+import torch
 from caffe2.python.onnx import backend
 import onnx
 
@@ -19,18 +20,16 @@ from constants import (
 	dataDir
 )
 
-if len(sys.argv) != 2 or not isfile(sys.argv[1]):
-	print 'file "%s" could not be found..' % sys.argv[1]
-	sys.exit(1)
+def Run(imagePath):
+	onnxModel = onnx.load(modelDeployParamsPath)
+	onnx.checker.check_model(onnxModel)
+	predictor = backend.prepare(onnxModel, device='CUDA:0')
 
-onnxModel = onnx.load(modelDeployParamsPath)
-onnx.checker.check_model(onnxModel)
-pred = backend.prepare(onnxModel, device='CUDA:0')
+	prepedImage = productionTransformationFlow(Image.open(imagePath))
+	prepedImage.cuda()
 
-prepedImage = productionTransformationFlow(Image.open(sys.argv[1]))
+	result = predictor.run([prepedImage.data.numpy()[np.newaxis]])
 
-output = pred.run(np.array(prepedImage, dtype=np.float32))
-
-print output
+	return result[0][0]
 
 # labels = walk(dataDir)[1]

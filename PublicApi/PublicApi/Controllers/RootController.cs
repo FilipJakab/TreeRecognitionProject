@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -9,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PublicApi.Helpers;
+using PublicApi.Interfaces;
 using PublicApi.Managers;
 using PublicApi.Models;
 using PublicApi.Models.Configurations;
@@ -21,12 +23,18 @@ namespace PublicApi.Controllers
 	public class RootController : ControllerBase
 	{
 		private readonly IOptions<Urls> urlsOptions;
-		private readonly ImageManager manager;
+		private readonly IOptions<Paths> pathsOptions;
+		private readonly IImageManager manager;
 		private readonly ILogger<RootController> logger;
 
-		public RootController(ILogger<RootController> logger, IOptions<Urls> urlsOptions, ImageManager manager)
+		public RootController(
+			ILogger<RootController> logger,
+			IImageManager manager,
+			IOptions<Urls> urlsOptions,
+			IOptions<Paths> pathsOptions)
 		{
 			this.urlsOptions = urlsOptions;
+			this.pathsOptions = pathsOptions;
 			this.manager = manager;
 			this.logger = logger;
 		}
@@ -39,11 +47,16 @@ namespace PublicApi.Controllers
 			{
 				logger.LogInformation($"{correlationId} - POST request for image processing");
 
+				string newFilename =
+					FileHelper.GetNewFileName(pathsOptions.Value.TemporaryFileLocation, Path.GetExtension(image.FileName));
+				FileInfo newFile = new FileInfo(newFilename);
+				using (Stream target = newFile.Create())
+					image.CopyTo(target);
+
 				Task<PredictionResultsResponseModel> predictionsForImage = manager.GetPredictionsForImage(
 					correlationId,
 					urlsOptions.Value.DeepLearningApiUrl,
-					image.OpenReadStream(),
-					image.FileName);
+					newFile.FullName);
 				predictionsForImage.Wait();
 
 				return predictionsForImage.Result;

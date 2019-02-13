@@ -11,6 +11,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using PublicApi.Interfaces;
 using PublicApi.Managers;
 using PublicApi.Models;
 using PublicApi.Models.Configurations;
@@ -33,17 +35,21 @@ namespace PublicApi
 		{
 			services.AddOptions();
 			services.Configure<Urls>(Configuration.GetSection("Urls"));
+			services.Configure<Paths>(Configuration.GetSection("Paths"));
 
 			// For linux's reversed proxy..
 			services.Configure<ForwardedHeadersOptions>(opts =>
-				{
-					opts.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-				});
+			{
+				opts.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+			});
 
-			services.AddTransient<ImageManager, ImageManager>();
-			services.AddTransient<HttpProvider, HttpProvider>();
+			services.AddTransient<IImageManager, ImageManager>();
+			services.AddTransient<IHttpProvider, HttpProvider>();
 
-			services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+			services.AddMvc()
+				.AddJsonOptions(opts =>
+					opts.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore)
+				.SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
