@@ -7,7 +7,7 @@ namespace PublicApi.Models
 		/// <summary>
 		/// Key is string representation of label and Value is confidence in percentages (0.0 to 1.0) 
 		/// </summary>
-		public Dictionary<string, float> ImagePredictions { get; set; }
+		public Dictionary<string, dynamic> ImagePredictions { get; set; }
 
 		/// <summary>
 		/// Representation of timespan in seconds

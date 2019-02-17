@@ -449,6 +449,5 @@ healthchecksdb
 
 # custom
 images/
-deeplearning-api/upload_dir/
-deeplearning-api/upload-dir/
+MachineLearning/deeplearning-api/upload_dir/
 

@@ -9,7 +9,7 @@ from flask_restful import Resource, Api
 from werkzeug.utils import secure_filename
 
 # append my scripts to path if they are not already there
-myPtorchScriptsPath = os.path.expanduser('../pytorch')
+myPtorchScriptsPath = os.path.expanduser('../../MachineLearning/pytorch')
 if myPtorchScriptsPath not in sys.path:
 	sys.path.append(myPtorchScriptsPath)
 

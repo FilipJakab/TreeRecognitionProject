@@ -23,10 +23,10 @@ from constants import (
 def Run(imagePath):
 	onnxModel = onnx.load(modelDeployParamsPath)
 	onnx.checker.check_model(onnxModel)
-	predictor = backend.prepare(onnxModel, device='CUDA:0')
+	predictor = backend.prepare(onnxModel)# , device='CUDA:0')
 
 	prepedImage = productionTransformationFlow(Image.open(imagePath))
-	prepedImage.cuda()
+	# prepedImage = prepedImage.to(device='cuda:0')
 
 	result = predictor.run([prepedImage.data.numpy()[np.newaxis]])
 
