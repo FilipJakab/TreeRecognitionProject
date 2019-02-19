@@ -1,23 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using PublicApi.Database;
 using PublicApi.Interfaces;
 using PublicApi.Managers;
 using PublicApi.Models;
+using PublicApi.Models.Base;
 using PublicApi.Models.Configurations;
+using PublicApi.Models.Interfaces;
 using PublicApi.Providers;
-using Serilog;
 
 namespace PublicApi
 {
@@ -43,8 +41,21 @@ namespace PublicApi
 				opts.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
 			});
 
+			services.AddDbContext<TreeRecognitionDbContext>(opts =>
+				opts.UseSqlServer(Configuration.GetConnectionString("TreeRecognitionDb")));
+
 			services.AddTransient<IImageManager, ImageManager>();
 			services.AddTransient<IHttpProvider, HttpProvider>();
+			services.AddTransient<IDatabaseProvider, TreeRecognitionDbProvider>();
+//			services.AddTransient<IDatabaseProvider, TreeRecognitionDbProvider>(provider =>
+//			{
+//				Guid correlationId = Guid.NewGuid();
+//
+//				TreeRecognitionDbContext dbContext = provider.GetService<TreeRecognitionDbContext>();
+//				ILogger<BaseDatabaseProvider> logger = provider.GetService<ILogger<BaseDatabaseProvider>>();
+//
+//				return new TreeRecognitionDbProvider(correlationId, dbContext, logger);
+//			});
 
 			services.AddMvc()
 				.AddJsonOptions(opts =>

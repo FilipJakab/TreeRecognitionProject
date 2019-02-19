@@ -27,7 +27,7 @@ namespace PublicApi.Managers
 
 			// TODO: Save results to DB..
 			return await httpProvider.Get<PredictionResultsResponseModel>(correlationId, url, new Dictionary<string, string>
-			{
+			{	
 				{ "image", filePath }
 			});
 		}

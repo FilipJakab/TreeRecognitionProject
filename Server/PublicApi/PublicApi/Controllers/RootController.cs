@@ -1,17 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PublicApi.Helpers;
 using PublicApi.Interfaces;
-using PublicApi.Managers;
 using PublicApi.Models;
 using PublicApi.Models.Configurations;
 using static PublicApi.Helpers.RequestHandler;
@@ -48,7 +43,7 @@ namespace PublicApi.Controllers
 				logger.LogInformation($"{correlationId} - POST request for image processing");
 
 				string newFilename =
-					FileHelper.GetNewFileName(pathsOptions.Value.TemporaryFileLocation, Path.GetExtension(image.FileName));
+					FileHelper.GetNewFileName(pathsOptions.Value.TemporaryFileLocation, Path.GetExtension(image.FileName));	
 				FileInfo newFile = new FileInfo(newFilename);
 				using (Stream target = newFile.Create())
 					image.CopyTo(target);

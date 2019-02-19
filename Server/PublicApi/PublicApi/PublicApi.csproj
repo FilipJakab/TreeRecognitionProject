@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
+    <UserSecretsId>9747fafc-0ba5-4de4-a0c6-8f9f63484e50</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,7 +25,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PublicApi.Models\PublicApi.Models.csproj" />
+    <ProjectReference Include="..\PublicApi.Database\PublicApi.Database.csproj" />
+    <ProjectReference Include="..\PublicApi.Data\PublicApi.Data.csproj" />
   </ItemGroup>
 
   <ItemGroup>
