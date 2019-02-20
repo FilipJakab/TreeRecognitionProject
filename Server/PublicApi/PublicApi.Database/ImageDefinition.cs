@@ -8,35 +8,36 @@ namespace PublicApi.Database
         public ImageDefinition()
         {
             PredictionRequest = new HashSet<PredictionRequest>();
+            PredictionResult = new HashSet<PredictionResult>();
         }
 
-        public int ImageId { get; set; }
+        public int ImageDefinitionId { get; set; }
         public int WebRequestId { get; set; }
         public string FileName { get; set; }
         public string OriginalFileName { get; set; }
-        public string FileExtension { get; set; }
-        public int Size { get; set; }
+        public long Size { get; set; }
         public string CameraVendor { get; set; }
         public string CameraModel { get; set; }
         public string Orientation { get; set; }
         public DateTime? Taken { get; set; }
         public string Compression { get; set; }
-        public int? ResolutionX { get; set; }
-        public int? ResolutionY { get; set; }
-        public string ResolutionUnit { get; set; }
-        public string ExposureTime { get; set; }
-        public string ExposureProgram { get; set; }
-        public string ExifVersion { get; set; }
-        public string ComponentConfiguration { get; set; }
+        public double? Xresolution { get; set; }
+        public double? Yresolution { get; set; }
+        public short? ResolutionUnit { get; set; }
+        public double? ExposureTime { get; set; }
+        public short? ExposureProgram { get; set; }
+        public byte[] ExifVersion { get; set; }
+        public byte[] ComponentConfiguration { get; set; }
         public double? ExposureBias { get; set; }
         public double? MaxApertureValue { get; set; }
-        public string Flash { get; set; }
-        public byte[] MakerNote { get; set; }
-        public string ColorDisposition { get; set; }
+        public double? ApertureValue { get; set; }
+        public short? Flash { get; set; }
+        public short? ColorSpace { get; set; }
         public int? Width { get; set; }
         public int? Height { get; set; }
 
         public WebRequest WebRequest { get; set; }
         public ICollection<PredictionRequest> PredictionRequest { get; set; }
+        public ICollection<PredictionResult> PredictionResult { get; set; }
     }
 }

@@ -9,28 +9,30 @@ using Flurl.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using PublicApi.Interfaces;
+using PublicApi.Services;
 
 namespace PublicApi.Providers
 {
 	public class HttpProvider : IHttpProvider
 	{
 		private readonly ILogger<HttpProvider> logger;
+		private readonly Guid correlationId;
 
-		public HttpProvider(ILogger<HttpProvider> logger)
+		public HttpProvider(ILogger<HttpProvider> logger, CorrelationService correlationService)
 		{
 			this.logger = logger;
+			correlationId = correlationService.CorrelationId;
 		}
 
 		/// <summary>
 		/// Posts file stream to specified url.
 		/// Expects a json response
 		/// </summary>
-		/// <param name="correlationId"></param>
 		/// <param name="url"></param>
 		/// <param name="fileStream"></param>
 		/// <param name="fileName"></param>
-		/// <returns></returns>
-		public async Task<T> Post<T>(Guid correlationId, string url, Stream fileStream, string fileName)
+		/// <returns>Deserialized JSON response into T</returns>
+		public async Task<T> Post<T>(string url, Stream fileStream, string fileName)
 		{
 			logger.LogTrace($"{correlationId} - Sending streamed content with fileName: {fileName} to url: {url} ");
 
@@ -40,7 +42,7 @@ namespace PublicApi.Providers
 			return JsonConvert.DeserializeObject<T>(await httpResponseMessage.Content.ReadAsStringAsync());
 		}
 
-		public async Task<T> Get<T>(Guid correlationId, string url, Dictionary<string, string> requestArgs)
+		public async Task<T> GetAsync<T>(string url, Dictionary<string, string> requestArgs)
 		{
 			logger.LogTrace($"{correlationId} - Sending GET request to url: {url}");
 

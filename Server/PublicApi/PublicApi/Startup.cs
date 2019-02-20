@@ -8,14 +8,17 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using PublicApi.Attributes;
 using PublicApi.Database;
 using PublicApi.Interfaces;
 using PublicApi.Managers;
+using PublicApi.Middlewares;
 using PublicApi.Models;
 using PublicApi.Models.Base;
 using PublicApi.Models.Configurations;
 using PublicApi.Models.Interfaces;
 using PublicApi.Providers;
+using PublicApi.Services;
 
 namespace PublicApi
 {
@@ -44,20 +47,17 @@ namespace PublicApi
 			services.AddDbContext<TreeRecognitionDbContext>(opts =>
 				opts.UseSqlServer(Configuration.GetConnectionString("TreeRecognitionDb")));
 
+			// services.AddHttpContextAccessor();
+
+			services.AddScoped<CorrelationService>();
 			services.AddTransient<IImageManager, ImageManager>();
 			services.AddTransient<IHttpProvider, HttpProvider>();
-			services.AddTransient<IDatabaseProvider, TreeRecognitionDbProvider>();
-//			services.AddTransient<IDatabaseProvider, TreeRecognitionDbProvider>(provider =>
-//			{
-//				Guid correlationId = Guid.NewGuid();
-//
-//				TreeRecognitionDbContext dbContext = provider.GetService<TreeRecognitionDbContext>();
-//				ILogger<BaseDatabaseProvider> logger = provider.GetService<ILogger<BaseDatabaseProvider>>();
-//
-//				return new TreeRecognitionDbProvider(correlationId, dbContext, logger);
-//			});
+			services.AddTransient<ITreeRecognitionDbProvider, TreeRecognitionDbProvider>();
 
-			services.AddMvc()
+			services.AddMvc(options =>
+				{
+					// options.Filters.Add(typeof(CorrelationIdHandlerAttribute));
+				})
 				.AddJsonOptions(opts =>
 					opts.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore)
 				.SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
@@ -76,6 +76,11 @@ namespace PublicApi
 			}
 
 			//app.UseHttpsRedirection();
+
+			app.UseMiddleware<MeasureTimeMiddleware>();
+			app.UseMiddleware<CommonExceptionHandlerMiddleware>();
+			app.UseMiddleware<SqlExceptionHandlerMiddleware>();
+			
 			app.UseMvc();
 		}
 	}

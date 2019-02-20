@@ -8,6 +8,7 @@ namespace PublicApi.Database
         public WebRequest()
         {
             ImageDefinition = new HashSet<ImageDefinition>();
+            Metric = new HashSet<Metric>();
             PredictionRequest = new HashSet<PredictionRequest>();
         }
 
@@ -16,6 +17,7 @@ namespace PublicApi.Database
         public DateTime Requested { get; set; }
 
         public ICollection<ImageDefinition> ImageDefinition { get; set; }
+        public ICollection<Metric> Metric { get; set; }
         public ICollection<PredictionRequest> PredictionRequest { get; set; }
     }
 }

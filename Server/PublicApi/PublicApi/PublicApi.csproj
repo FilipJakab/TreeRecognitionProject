@@ -10,6 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="ExifLib.Standard" Version="1.7.0" />
     <PackageReference Include="Flurl" Version="2.8.0" />
     <PackageReference Include="Flurl.Http" Version="2.4.0" />
     <PackageReference Include="Microsoft.AspNetCore.App" />

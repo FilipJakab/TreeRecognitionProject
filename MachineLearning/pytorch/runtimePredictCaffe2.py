@@ -20,16 +20,23 @@ from constants import (
 	dataDir
 )
 
-def Run(imagePath):
+def Run(imagePaths):
 	onnxModel = onnx.load(modelDeployParamsPath)
 	onnx.checker.check_model(onnxModel)
 	predictor = backend.prepare(onnxModel)# , device='CUDA:0')
 
-	prepedImage = productionTransformationFlow(Image.open(imagePath))
+	preppedImages = []
+	for imagePath in imagePaths:
+		preppedImages.append(
+			productionTransformationFlow(Image.open(imagePath))
+				.data.numpy()
+		)
 	# prepedImage = prepedImage.to(device='cuda:0')
 
-	result = predictor.run([prepedImage.data.numpy()[np.newaxis]])
+	result = predictor.run([np.stack(preppedImages, axis=0)])
 
-	return result[0][0]
+	print result
+
+	return result[0]
 
 # labels = walk(dataDir)[1]

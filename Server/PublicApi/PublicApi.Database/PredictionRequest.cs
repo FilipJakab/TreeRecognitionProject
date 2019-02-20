@@ -7,7 +7,6 @@ namespace PublicApi.Database
     {
         public PredictionRequest()
         {
-            Metric = new HashSet<Metric>();
             PredictionResult = new HashSet<PredictionResult>();
         }
 
@@ -17,7 +16,6 @@ namespace PublicApi.Database
 
         public ImageDefinition Image { get; set; }
         public WebRequest WebRequest { get; set; }
-        public ICollection<Metric> Metric { get; set; }
         public ICollection<PredictionResult> PredictionResult { get; set; }
     }
 }

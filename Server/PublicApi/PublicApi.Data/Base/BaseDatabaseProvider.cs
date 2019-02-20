@@ -5,20 +5,22 @@ using PublicApi.Models.Interfaces;
 
 namespace PublicApi.Models.Base
 {
-	public abstract class BaseDatabaseProvider : IDatabaseProvider
+	public abstract class BaseDatabaseProvider<TDbContext>
 	{
+		private readonly TDbContext databaseContext;
+		private readonly ILogger<BaseDatabaseProvider<TDbContext>> logger;
 		private readonly Guid correlationId;
-		private readonly DbContext databaseContext;
-		private readonly ILogger<BaseDatabaseProvider> logger;
 
-		protected BaseDatabaseProvider(Guid correlationId, DbContext databaseContext, ILogger<BaseDatabaseProvider> logger)
+		protected BaseDatabaseProvider(TDbContext databaseContext,
+			ILogger<BaseDatabaseProvider<TDbContext>> logger,
+			Guid correlationId)
 		{
-			this.correlationId = correlationId;
 			this.databaseContext = databaseContext;
+			this.correlationId = correlationId;
 			this.logger = logger;
 		}
 
-		public void RunInContext(Action<DbContext> magic)
+		protected void RunWithContext(Action<TDbContext> magic)
 		{
 			try
 			{
@@ -29,8 +31,8 @@ namespace PublicApi.Models.Base
 				logger.LogError(ex, $"{correlationId} - Error while executing SQL query");
 			}
 		}
-		
-		public TRes RunInContext<TRes>(Func<DbContext, TRes> magic)
+
+		protected TRes RunWithContext<TRes>(Func<TDbContext, TRes> magic)
 		{
 			try
 			{
