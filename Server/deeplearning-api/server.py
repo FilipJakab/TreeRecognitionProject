@@ -65,7 +65,7 @@ class RootController(Resource):
 		# print 'softmaxedResults: ', softmaxedResults
 		responseObj['data'] = InsertLabels(softmaxedResults)
 		# print 'data: ', responseObj['data']
-		responseObj['taken'] = (time.time() - since)
+		responseObj['taken'] = int((time.time() - since) * 1000)
 
 		responseObj['isOk'] = True
 

@@ -99,7 +99,7 @@ namespace PublicApi.Managers
 					imagePredictions.Select(prediction => new PredictionResult
 					{
 						Label = prediction.Key,
-						Score = float.Parse(prediction.Value),
+						Score = prediction.Value,
 						PredictionRequestId = predictionRequests[i].PredictionRequestId
 					}).ToList())
 				.Aggregate((predictions1, predictions2) =>
