@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using PublicApi.Database;
 
-namespace PublicApi.Models.Interfaces
+namespace PublicApi.Data.Interfaces
 {
 	public interface ITreeRecognitionDbProvider
 	{

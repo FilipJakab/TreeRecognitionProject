@@ -13,7 +13,7 @@ create table dbo.WebRequest (
 
 create table dbo.ImageDefinition (
 	ImageDefinitionId int identity(1, 1) not null primary key,
-	WebRequestId int not null foreign key references dbo.WebRequest(WebRequestId),
+	WebRequestId int foreign key references dbo.WebRequest(WebRequestId),
 	FileName nvarchar(36) not null,
 	OriginalFileName nvarchar(500),
 	Size bigint not null,
@@ -41,8 +41,8 @@ create table dbo.ImageDefinition (
 
 create table dbo.PredictionRequest (
 	PredictionRequestId int identity(1, 1) not null primary key,
-	ImageId int not null foreign key references dbo.ImageDefinition(ImageDefinitionId),
-	WebRequestId int not null foreign key references dbo.WebRequest(WebRequestId)
+	ImageId int not null foreign key references dbo.ImageDefinition(ImageDefinitionId) on delete cascade,
+	WebRequestId int not null foreign key references dbo.WebRequest(WebRequestId) on delete cascade
 );
 
 create table dbo.PredictionResult (
@@ -55,7 +55,7 @@ create table dbo.PredictionResult (
 
 create table dbo.Metric (
 	MetricId int identity(1, 1) not null primary key,
-	WebRequestId int not null foreign key references dbo.WebRequest(WebRequestId),
+	WebRequestId int not null foreign key references dbo.WebRequest(WebRequestId) on delete cascade,
 	MetricCode nvarchar(10) not null foreign key references dbo.MetricType(Code),
 	Started date not null,
 	Ended date not null,
@@ -79,3 +79,6 @@ create table dbo.Metric (
 --
 -- alter table dbo.ImageDefinition
 -- 	drop column MakerNote
+
+-- select * from dbo.WebRequest
+

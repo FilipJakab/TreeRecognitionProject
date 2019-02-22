@@ -1,9 +1,9 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using PublicApi.Models.Interfaces;
+using PublicApi.Data.Interfaces;
 
-namespace PublicApi.Models.Base
+namespace PublicApi.Data.Base
 {
 	public abstract class BaseDatabaseProvider<TDbContext>
 	{

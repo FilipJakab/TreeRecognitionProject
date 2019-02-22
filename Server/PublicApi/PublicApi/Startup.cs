@@ -13,10 +13,10 @@ using PublicApi.Database;
 using PublicApi.Interfaces;
 using PublicApi.Managers;
 using PublicApi.Middlewares;
-using PublicApi.Models;
-using PublicApi.Models.Base;
-using PublicApi.Models.Configurations;
-using PublicApi.Models.Interfaces;
+using PublicApi.Data;
+using PublicApi.Data.Base;
+using PublicApi.Data.Configurations;
+using PublicApi.Data.Interfaces;
 using PublicApi.Providers;
 using PublicApi.Services;
 
@@ -78,8 +78,9 @@ namespace PublicApi
 			//app.UseHttpsRedirection();
 
 			app.UseMiddleware<MeasureTimeMiddleware>();
-			app.UseMiddleware<CommonExceptionHandlerMiddleware>();
-			app.UseMiddleware<SqlExceptionHandlerMiddleware>();
+			app.UseMiddleware<UnknownErrorCatchMiddleware>();
+			app.UseMiddleware<FlurlHttpCatchMiddleware>();
+			app.UseMiddleware<CommonSqlErrorCatchMiddleware>();
 			
 			app.UseMvc();
 		}

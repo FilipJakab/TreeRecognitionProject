@@ -7,16 +7,16 @@ using PublicApi.Services;
 
 namespace PublicApi.Middlewares
 {
-	public class SqlExceptionHandlerMiddleware
+	public class CommonSqlErrorCatchMiddleware
 	{
 		private readonly RequestDelegate next;
 
-		public SqlExceptionHandlerMiddleware(RequestDelegate next)
+		public CommonSqlErrorCatchMiddleware(RequestDelegate next)
 		{
 			this.next = next;
 		}
 
-		public async Task InvokeAsync(HttpContext context, ILogger<SqlExceptionHandlerMiddleware> logger, CorrelationService correlationService)
+		public async Task InvokeAsync(HttpContext context, ILogger<CommonSqlErrorCatchMiddleware> logger, CorrelationService correlationService)
 		{
 			try
 			{

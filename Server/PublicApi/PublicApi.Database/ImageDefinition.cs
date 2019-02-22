@@ -12,7 +12,7 @@ namespace PublicApi.Database
         }
 
         public int ImageDefinitionId { get; set; }
-        public int WebRequestId { get; set; }
+        public int? WebRequestId { get; set; }
         public string FileName { get; set; }
         public string OriginalFileName { get; set; }
         public long Size { get; set; }

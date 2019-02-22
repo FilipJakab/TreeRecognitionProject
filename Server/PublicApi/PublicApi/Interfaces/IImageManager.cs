@@ -2,12 +2,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using PublicApi.Models;
+using PublicApi.Data;
 
 namespace PublicApi.Interfaces
 {
 	public interface IImageManager
 	{
-		Task<PredictionResultsResponseModel> ProcessImagesAsync(string tempFolderPath, string url, List<IFormFile> files);
+		Task<ResponseModel> ProcessImagesAsync(string tempFolderPath, string url, List<IFormFile> files);
 	}
 }

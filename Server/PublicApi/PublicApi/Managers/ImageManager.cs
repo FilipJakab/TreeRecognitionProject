@@ -9,8 +9,8 @@ using Microsoft.Extensions.Logging;
 using PublicApi.Database;
 using PublicApi.Helpers;
 using PublicApi.Interfaces;
-using PublicApi.Models;
-using PublicApi.Models.Interfaces;
+using PublicApi.Data;
+using PublicApi.Data.Interfaces;
 using PublicApi.Services;
 
 namespace PublicApi.Managers
@@ -42,7 +42,7 @@ namespace PublicApi.Managers
 		/// <param name="url">Url at which DeepLearningAPI is server</param>
 		/// <param name="files">Files (images) to be processed</param>
 		/// <returns></returns>
-		public async Task<PredictionResultsResponseModel> ProcessImagesAsync(
+		public async Task<ResponseModel> ProcessImagesAsync(
 			string tempFolderPath,
 			string url,
 			List<IFormFile> files)
@@ -55,11 +55,12 @@ namespace PublicApi.Managers
 			DateTime started = DateTime.Now;
 			WebRequest webRequest = dbProvider.RegisterRequest(correlationId);
 			// Asynchronously save files and extract their EXIF data
-			files.ForEach(file =>
+			string getQueryStringParam = files.Select(file =>
 			{
+				string generatedFileName;
 				using (Stream fileStream = file.OpenReadStream())
 				{
-					string generatedFileName = SaveFile(tempFolderPath, fileStream, file.FileName);
+					generatedFileName = SaveFile(tempFolderPath, fileStream, file.FileName);
 
 					ImageDefinition imageDefinition = new ImageDefinition();
 
@@ -73,22 +74,32 @@ namespace PublicApi.Managers
 					dbProvider.RegisterImageDefinition(imageDefinition);
 					predictionRequests.Add(
 						dbProvider.RegisterPredictionRequest(webRequest.WebRequestId, imageDefinition.ImageDefinitionId));
-					getQuery.Add("image", generatedFileName);
 				}
-			});
+
+				return generatedFileName;
+			}).Aggregate((baseStr, str) => $"{baseStr},{str}");
+			getQuery.Add("image", getQueryStringParam);
 
 			// Send actual request
 			logger.LogDebug($"{correlationId} - Sending request for predictions to \"{url}\"");
-			PredictionResultsResponseModel response = await httpProvider
-				.GetAsync<PredictionResultsResponseModel>(url, getQuery);
+			ResponseModel response = await httpProvider
+				.GetAsync<ResponseModel>(url, getQuery);
 
 			// TODO: Save results to DB..
 			// List<PredictionResult> results = new List<PredictionResult>();
-			List<PredictionResult> allPredictionResults = response.ImagePredictions.Select((imagePredictions, i) =>
+			if (response.Data == null)
+			{
+				logger.LogError($"{correlationId} - Predictions from DeepLearning API was not returned.");
+
+				// TODO: Register metrics
+				return response;
+			}
+				
+			List<PredictionResult> allPredictionResults = response.Data.Select((imagePredictions, i) =>
 					imagePredictions.Select(prediction => new PredictionResult
 					{
 						Label = prediction.Key,
-						Score = prediction.Value,
+						Score = float.Parse(prediction.Value),
 						PredictionRequestId = predictionRequests[i].PredictionRequestId
 					}).ToList())
 				.Aggregate((predictions1, predictions2) =>
@@ -133,11 +144,11 @@ namespace PublicApi.Managers
 				if (exifReader.GetTagValue(ExifTags.YResolution, out double yResolution))
 					imageDefinition.Yresolution = yResolution;
 				if (exifReader.GetTagValue(ExifTags.ResolutionUnit, out ushort resolutionUnit)) // uint16
-					imageDefinition.ResolutionUnit = (short)resolutionUnit;
+					imageDefinition.ResolutionUnit = (short) resolutionUnit;
 				if (exifReader.GetTagValue(ExifTags.ExposureTime, out double exposureTime)) // double
 					imageDefinition.ExposureTime = exposureTime;
 				if (exifReader.GetTagValue(ExifTags.ExposureProgram, out ushort exposureProgram)) // uint16
-					imageDefinition.ExposureProgram = (short)exposureProgram;
+					imageDefinition.ExposureProgram = (short) exposureProgram;
 				if (exifReader.GetTagValue(ExifTags.ExifVersion, out byte[] exifVersion)) // byte[]
 					imageDefinition.ExifVersion = exifVersion;
 				if (exifReader.GetTagValue(ExifTags.ComponentsConfiguration, out byte[] componentsConfiguration)) // byte[]
@@ -149,9 +160,9 @@ namespace PublicApi.Managers
 				if (exifReader.GetTagValue(ExifTags.ApertureValue, out double aperture))
 					imageDefinition.ApertureValue = aperture;
 				if (exifReader.GetTagValue(ExifTags.Flash, out ushort flash)) // uint16
-					imageDefinition.Flash = (short)flash;
+					imageDefinition.Flash = (short) flash;
 				if (exifReader.GetTagValue(ExifTags.ColorSpace, out ushort colorSpace)) // uint16
-					imageDefinition.ColorSpace = (short)colorSpace;
+					imageDefinition.ColorSpace = (short) colorSpace;
 				if (exifReader.GetTagValue(ExifTags.ImageWidth, out int width))
 					imageDefinition.Width = width;
 				if (exifReader.GetTagValue(ExifTags.ImageWidth, out int height))
@@ -170,11 +181,11 @@ namespace PublicApi.Managers
 		/// <returns></returns>
 		private string SaveFile(string tempFolderPath, Stream file, string fileName)
 		{
-			logger.LogDebug($"{correlationId} - file \"{fileName}\" is being saved to \"{tempFolderPath}\"");
-
 			string newFilename = FileHelper
 				.GetNewFileName(tempFolderPath, Path.GetExtension(fileName));
 			FileInfo newFile = new FileInfo(newFilename);
+			
+			logger.LogDebug($"{correlationId} - file \"{fileName}\" is being saved to \"{tempFolderPath}\" under \"{newFilename}\" file name");
 
 			using (Stream target = newFile.Create())
 				file.CopyTo(target);

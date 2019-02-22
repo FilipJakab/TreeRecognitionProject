@@ -51,37 +51,49 @@ class RootController(Resource):
 			return responseObj
 
 		images = request.args['image'].split(',')
-		print 'images', images
+		# print 'images', images
 
 		for image in images:
 			if not os.path.isfile(image):
-				print 'file at "%s" was not found..' % image
+				# print 'file at "%s" was not found..' % image
 				responseObj['data'] = 'Specified file path "%s" was not found' % image
 				return responseObj
 
 		since = time.time()
 		results = Run(images)
 		softmaxedResults = SoftmaxFn(results)
-		print 'softmaxedResults: ', softmaxedResults
+		# print 'softmaxedResults: ', softmaxedResults
 		responseObj['data'] = InsertLabels(softmaxedResults)
-		print 'data: ', responseObj['data']
+		# print 'data: ', responseObj['data']
 		responseObj['taken'] = (time.time() - since)
 
 		responseObj['isOk'] = True
 
 		self.StringifyNumbers(responseObj)
+		print 'stringified: ', responseObj
 		return responseObj
 
 	def StringifyNumbers(self, obj):
+		print '\ngot ', obj, ' to process'		
 		if type(obj) is list: 
-			for i, item in enumerate(obj):
-				obj[i] = str(item)
+			for i in range(len(obj)):
+				if type(obj[i]) in [int, float, np.float32]:
+					print obj[i], ' is number, converting..'
+					obj[i] = str(obj[i])
+				elif type(obj[i]) in [dict, list]:
+					print obj[i], ' is object/list, recursively converting..'
+					self.StringifyNumbers(obj[i])
 			return
 		for key in obj.keys():
-			if type(obj[key]) in [int, float]:
+			valType = type(obj[key])
+			print 'type of objs val: ', valType
+			if valType in [int, float, np.float32]:
+				print obj[key], ' is number, converting..'
 				obj[key] = str(obj[key])
-			elif type(obj[key]) in [dict, list]:
+			elif valType in [dict, list]:
+				print obj[key], ' is object/list, recursively converting..'
 				self.StringifyNumbers(obj[key])
+		print '\n'
 
 	def check_file_extension(self, filename):
 		return filename.split('.')[-1] in app.config['ALLOWED_IMAGE_EXETENSION']

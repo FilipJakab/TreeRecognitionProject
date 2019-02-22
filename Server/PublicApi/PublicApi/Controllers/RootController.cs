@@ -7,8 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PublicApi.Interfaces;
-using PublicApi.Models;
-using PublicApi.Models.Configurations;
+using PublicApi.Data;
+using PublicApi.Data.Configurations;
 using PublicApi.Services;
 
 namespace PublicApi.Controllers
@@ -44,7 +44,10 @@ namespace PublicApi.Controllers
 		{
 			logger.LogInformation($"{correlationId} - POST request for image processing");
 
-			Task<PredictionResultsResponseModel> predictionsForImage = manager.ProcessImagesAsync(
+			if (images.Count == 0)
+				return BadRequest("No files were provided");
+
+			Task<ResponseModel> predictionsForImage = manager.ProcessImagesAsync(
 				pathsOptions.Value.TemporaryFileLocation,
 				urlsOptions.Value.DeepLearningApiUrl,
 				images);

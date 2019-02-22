@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using PublicApi.Database;
-using PublicApi.Models;
-using PublicApi.Models.Base;
-using PublicApi.Models.Interfaces;
+using PublicApi.Data;
+using PublicApi.Data.Base;
+using PublicApi.Data.Interfaces;
 using PublicApi.Services;
 
 namespace PublicApi.Providers

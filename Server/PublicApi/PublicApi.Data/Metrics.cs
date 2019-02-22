@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PublicApi.Models
+namespace PublicApi.Data
 {
 	public class Metrics
 	{

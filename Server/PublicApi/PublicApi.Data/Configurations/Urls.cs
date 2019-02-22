@@ -1,4 +1,4 @@
-﻿namespace PublicApi.Models.Configurations
+﻿namespace PublicApi.Data.Configurations
 {
 	public class Urls
 	{

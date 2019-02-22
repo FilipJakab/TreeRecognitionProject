@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Net.Mime;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,16 +12,16 @@ using PublicApi.Services;
 
 namespace PublicApi.Middlewares
 {
-	public class CommonExceptionHandlerMiddleware
+	public class UnknownErrorCatchMiddleware
 	{
 		private readonly RequestDelegate next;
 
-		public CommonExceptionHandlerMiddleware(RequestDelegate next)
+		public UnknownErrorCatchMiddleware(RequestDelegate next)
 		{
 			this.next = next;
 		}
 
-		public async Task InvokeAsync(HttpContext context, ILogger<CommonExceptionHandlerMiddleware> logger,
+		public async Task InvokeAsync(HttpContext context, ILogger<UnknownErrorCatchMiddleware> logger,
 			CorrelationService correlationService)
 		{
 			try
@@ -33,7 +34,11 @@ namespace PublicApi.Middlewares
 					$"{correlationService.CorrelationId} - Unknown error occured while processing your request");
 
 				context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-				context.Response.Body.Write(JsonConvert.SerializeObject(ex).Select(x => (byte)x).ToArray());
+				context.Response.ContentType = "application/json";
+				context.Response.Body.Write(JsonConvert.SerializeObject(ex, new JsonSerializerSettings
+				{
+					ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+				}).Select(x => (byte)x).ToArray());
 			}
 		}
 	}
