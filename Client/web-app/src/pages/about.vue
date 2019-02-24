@@ -1,9 +1,9 @@
 <template>
-	<v-container>
+	<v-container fluid>
 		<v-layout>
 			<v-flex align-self-center md4>
 				<h1 class="display4">
-					404: Not found
+					About
 				</h1>
 			</v-flex>
 		</v-layout>
@@ -12,9 +12,8 @@
 
 <script>
 export default {
-	name: 'not-found',
-	data() {
-		return {}
-	}
+	name: 'about'
 }
 </script>
+
+<style scoped></style>

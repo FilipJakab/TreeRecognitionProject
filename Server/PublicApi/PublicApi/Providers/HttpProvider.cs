@@ -29,15 +29,13 @@ namespace PublicApi.Providers
 		/// Expects a json response
 		/// </summary>
 		/// <param name="url"></param>
-		/// <param name="fileStream"></param>
-		/// <param name="fileName"></param>
+		/// <param name="data"></param>
 		/// <returns>Deserialized JSON response into T</returns>
-		public async Task<T> Post<T>(string url, Stream fileStream, string fileName)
+		public async Task<T> PostAsync<T>(string url, object data)
 		{
-			logger.LogTrace($"{correlationId} - Sending streamed content with fileName: {fileName} to url: {url} ");
+			logger.LogTrace($"{correlationId} - Sending POST request to {url}");
 
-			HttpResponseMessage httpResponseMessage = await url.PostMultipartAsync(content =>
-				content.AddFile("image", fileStream, fileName));
+			HttpResponseMessage httpResponseMessage = await url.PostJsonAsync(data);
 
 			return JsonConvert.DeserializeObject<T>(await httpResponseMessage.Content.ReadAsStringAsync());
 		}

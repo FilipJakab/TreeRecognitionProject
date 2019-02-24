@@ -14,7 +14,7 @@ if myPtorchScriptsPath not in sys.path:
 	sys.path.append(myPtorchScriptsPath)
 
 # custom
-from runtimePredictCaffe2 import Run
+from runtimePredictCaffe2 import Predictor
 from functionImplementations import SoftmaxFn
 from constants import datasetLabelsPath
 
@@ -37,42 +37,39 @@ def InsertLabels(imagesPredictions):
 		results.append(prediction)
 	return results
 
+predictor = Predictor()
+
 class RootController(Resource):
-	def get(self):
+	def post(self):
 		responseObj = {
 			'data': '',
 			'isOk': False,
 			'taken': -1
 		}
-
-		
-		if 'image' not in request.args.keys():
-			responseObj['data'] = 'image was not provided'
-			return responseObj
-
-		images = request.args['image'].split(',')
+		# validate input
+		imagesJson = json.loads(request.data)
+		print imagesJson
+		if 'Images' not in imagesJson.keys():
+			responseObj['data'] = 'images were not provided'
+			return responseObj, 400
+		images = imagesJson['Images']
 		# print 'images', images
-
 		for image in images:
 			if not os.path.isfile(image):
 				# print 'file at "%s" was not found..' % image
 				responseObj['data'] = 'Specified file path "%s" was not found' % image
 				return responseObj
-
 		since = time.time()
-		results = Run(images)
+		results = predictor.Run(images)
 		softmaxedResults = SoftmaxFn(results)
 		# print 'softmaxedResults: ', softmaxedResults
 		responseObj['data'] = InsertLabels(softmaxedResults)
 		# print 'data: ', responseObj['data']
 		responseObj['taken'] = int((time.time() - since) * 1000)
-
 		responseObj['isOk'] = True
-
 		self.StringifyNumbers(responseObj)
 		print 'stringified: ', responseObj
 		return responseObj
-
 	def StringifyNumbers(self, obj):
 		print '\ngot ', obj, ' to process'		
 		if type(obj) is list: 
@@ -98,17 +95,17 @@ class RootController(Resource):
 	def check_file_extension(self, filename):
 		return filename.split('.')[-1] in app.config['ALLOWED_IMAGE_EXETENSION']
 
-class DemoController(Resource):
-	"""docstring for DemoController"""
-	def get(self):
-		print request.args['image']
+# class DemoController(Resource):
+# 	"""docstring for DemoController"""
+# 	def get(self):
+# 		print request.args['image']
 		
 
 # example of method return
 # return { 'message': '200 OK' }, 200, { 'custom-header': time.gmtime() }
 
 api.add_resource(RootController, '/')
-api.add_resource(DemoController, '/demo')
+# api.add_resource(DemoController, '/demo')
 
 app.run(debug=True, host='0.0.0.0', port=3333)
 

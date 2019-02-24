@@ -1,5 +1,6 @@
 import Vue from 'vue'
-import { VueRouter } from 'vue-router'
+import VueRouter from 'vue-router'
+import Axios from 'axios'
 
 import './plugins/vuetify'
 import App from './App.vue'
@@ -8,10 +9,24 @@ import App from './App.vue'
 import './assets/material-icons.css'
 import './assets/fonts/roboto.css'
 
+import { Routes } from './config/vue-router.config'
+
 Vue.config.productionTip = false
+
+// inject Axios to every Vue instance
+Vue.prototype.$http = Axios.create({
+	baseURL: process.env.VUE_APP_BASE_ENDPOINT_URL,
+	withCredentials: false,
+	headers: {
+		'Content-Type': 'application/json'
+	}
+})
 
 Vue.use(VueRouter)
 
 new Vue({
-  render: h => h(App),
+	router: new VueRouter({
+		routes: Routes
+	}),
+	render: h => h(App)
 }).$mount('#app')

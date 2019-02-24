@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Mime;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -15,6 +17,8 @@ namespace PublicApi.Controllers
 {
 	[Route("api")]
 	[ApiController]
+	[EnableCors("AllowedOriginsPolicy")]
+	[Produces("application/json")]
 	public class RootController : ControllerBase
 	{
 		private readonly IOptions<Urls> urlsOptions;
@@ -40,7 +44,7 @@ namespace PublicApi.Controllers
 
 		[HttpPost]
 		[AllowAnonymous]
-		public IActionResult Post([FromForm(Name = "image")] List<IFormFile> images)
+		public IActionResult Post([FromForm(Name = "images")] List<IFormFile> images)
 		{
 			logger.LogInformation($"{correlationId} - POST request for image processing");
 
@@ -53,7 +57,7 @@ namespace PublicApi.Controllers
 				images);
 			predictionsForImage.Wait();
 
-			return new ObjectResult(predictionsForImage.Result);
+			return Ok(predictionsForImage.Result); // new ObjectResult(predictionsForImage.Result);
 		}
 	}
 }

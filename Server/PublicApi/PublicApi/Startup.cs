@@ -33,6 +33,14 @@ namespace PublicApi
 			services.Configure<Urls>(Configuration.GetSection("Urls"));
 			services.Configure<Paths>(Configuration.GetSection("Paths"));
 
+			services.AddCors(options => options
+				.AddPolicy("AllowedOriginsPolicy", builder =>
+					builder
+						.AllowAnyOrigin()
+						// .WithOrigins("http://localhost:8080/")
+						.AllowAnyHeader()
+						.AllowAnyMethod()));
+
 			// For linux's reversed proxy..
 			services.Configure<ForwardedHeadersOptions>(opts =>
 			{
@@ -70,6 +78,7 @@ namespace PublicApi
 				app.UseHsts();
 			}
 
+			app.UseCors();
 			//app.UseHttpsRedirection();
 
 			app.UseMiddleware<MeasureTimeMiddleware>();

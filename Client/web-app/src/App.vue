@@ -1,52 +1,51 @@
 <template>
 	<v-app>
-		<v-navigation-drawer app
-		fixed
-		v-model="drawer">
-			<v-list dense>
-				<v-list-tile>
-					<v-list-tile-action>
-						<v-icon>home</v-icon>
-					</v-list-tile-action>
-					<v-list-tile-content>
-						<v-list-tile-title>Home</v-list-tile-title>
-					</v-list-tile-content>
-				</v-list-tile>
-				
-			</v-list>
+		<v-navigation-drawer app fixed temporary v-model="drawer">
+			<v-sidebar-menu :menu="menu" />
 		</v-navigation-drawer>
 		<v-toolbar color="indigo" dark fixed app>
 			<v-toolbar-side-icon @click.stop="drawer = !drawer" />
-			<v-toolbar-title></v-toolbar-title>
+			<v-toolbar-title>Project: Tree Recognition</v-toolbar-title>
 		</v-toolbar>
+		<v-content>
+			<router-view></router-view>
+		</v-content>
 		<v-footer></v-footer>
 	</v-app>
 </template>
 
 <script>
-	import {
+import {
+	VNavigationDrawer,
+	VFooter,
+	VApp,
+	VToolbar,
+	VContent
+} from 'vuetify/lib'
+
+import VSidebarMenu from './components/navigation/sidebar-menu'
+import Menu from './config/sidebar-menu.config'
+
+export default {
+	name: 'App',
+	components: {
 		VNavigationDrawer,
 		VFooter,
 		VApp,
-		VList,
-		VIcon,
-		VToolbar
-	} from 'vuetify/lib'
-	
-	export default {
-		name: 'App',
-		components: {
-			VNavigationDrawer,
-			VFooter,
-			VApp,
-			VList,
-			VIcon,
-			VToolbar
-		},
-		data () {
-			return {
-				drawer: null
-			}
+		VToolbar,
+		VContent,
+		VSidebarMenu
+	},
+	watch: {
+		$route() {
+			this.drawer = !this.drawer
+		}
+	},
+	data() {
+		return {
+			drawer: false,
+			menu: Menu
 		}
 	}
+}
 </script>

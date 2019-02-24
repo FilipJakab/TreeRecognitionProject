@@ -1,25 +1,24 @@
-///
 /// Definition of left-sided menu..
-///
 
-class MenuItem {
+export class MenuItem {
+	id = null
 	title = ''
-	ref = ''
+	routeName = ''
 	icon = ''
-	submenu = []
+	children = []
 
-	constructor(title, ref, icon, submenu) {
+	constructor(title, routeName, icon, children) {
+		this.id = Math.random()
+
 		this.title = title || null
-		this.ref = ref || null
+		this.routeName = routeName || null
 		this.icon = icon || null
-		this.submenu = submenu || null
+		this.children = children || null
 	}
 }
 
-export default {
-	items: [
-		new MenuItem('Home', '/', 'home'),
-		// new MenuItem('')
-		new MenuItem('About', '/about', 'about-outline ')
-	]
-}
+export default [
+	new MenuItem('Home', 'home', 'home'),
+	// new MenuItem('')
+	new MenuItem('About', 'about', 'about-outline ')
+]

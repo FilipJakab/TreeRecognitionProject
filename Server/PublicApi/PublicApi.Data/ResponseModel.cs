@@ -8,12 +8,14 @@ namespace PublicApi.Data
 	{
 		/// <summary>
 		/// List of images -> for each image there is list of Label:Confidency pairs 
-		/// Key is string representation of label and Value is confidence in percentages (0.0 to 1.0) 
+		/// Key is string representation of label and Value is confidence in percentages (0.0 to 1.0)
+		/// Its array of objects
 		/// </summary>
-		public List<Dictionary<string, float>> Data { get; set; }
-		[JsonIgnore]
-		public bool IsOk { get; set; }
-		[JsonIgnore]
-		public TimeSpan Taken { get; set; }
+		public Dictionary<string, Dictionary<string, float>> Data { get; set; }
+
+		public ResponseModel(Dictionary<string, Dictionary<string, float>> data)
+		{
+			Data = data;
+		}
 	}
 }

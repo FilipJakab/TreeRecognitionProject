@@ -20,23 +20,22 @@ from constants import (
 	dataDir
 )
 
-def Run(imagePaths):
-	onnxModel = onnx.load(modelDeployParamsPath)
-	onnx.checker.check_model(onnxModel)
-	predictor = backend.prepare(onnxModel)# , device='CUDA:0')
-
-	preppedImages = []
-	for imagePath in imagePaths:
-		preppedImages.append(
-			productionTransformationFlow(Image.open(imagePath))
-				.data.numpy()
-		)
-	# prepedImage = prepedImage.to(device='cuda:0')
-
-	result = predictor.run([np.stack(preppedImages, axis=0)])
-
-	print result
-
-	return result[0]
+class Predictor:
+	def __init__(self):
+		self.onnxModel = onnx.load(modelDeployParamsPath)
+		onnx.checker.check_model(self.onnxModel)
+		self.predictor = backend.prepare(self.onnxModel)# , device='CUDA:0')
+	def Run(self, imagePaths):
+		preppedImages = []
+		for imagePath in imagePaths:
+			preppedImages.append(
+				productionTransformationFlow(Image.open(imagePath))
+					.data.numpy()
+			)
+		# prepedImage = prepedImage.to(device='cuda:0')
+		result = self.predictor.run([np.stack(preppedImages, axis=0)])
+		print result
+		# return st batch
+		return result[0]
 
 # labels = walk(dataDir)[1]

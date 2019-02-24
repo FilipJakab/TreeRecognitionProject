@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using ExifLib;
 using Microsoft.AspNetCore.Http;
@@ -49,13 +50,14 @@ namespace PublicApi.Managers
 		{
 			logger.LogDebug($"{correlationId} - Getting predictions for {files.Count} images");
 
-			Dictionary<string, string> getQuery = new Dictionary<string, string>(files.Count);
+			// orig. file names
+			List<string> images = new List<string>(files.Count);
 			List<PredictionRequest> predictionRequests = new List<PredictionRequest>(files.Count);
 
 			DateTime started = DateTime.Now;
 			WebRequest webRequest = dbProvider.RegisterRequest(correlationId);
 			// Asynchronously save files and extract their EXIF data
-			string getQueryStringParam = files.Select(file =>
+			List<string> newFileNames = files.Select(file =>
 			{
 				string generatedFileName;
 				using (Stream fileStream = file.OpenReadStream())
@@ -73,29 +75,33 @@ namespace PublicApi.Managers
 					logger.LogDebug($"{correlationId} - Registering ImageDefinition of {file.FileName} file to Database");
 					dbProvider.RegisterImageDefinition(imageDefinition);
 					predictionRequests.Add(
-						dbProvider.RegisterPredictionRequest(webRequest.WebRequestId, imageDefinition.ImageDefinitionId));
+						dbProvider.RegisterPredictionRequest(webRequest.WebRequestId, imageDefinition.ImageDefinitionId)
+					);
 				}
+				
+				images.Add(file.FileName);
 
 				return generatedFileName;
-			}).Aggregate((baseStr, str) => $"{baseStr},{str}");
-			getQuery.Add("image", getQueryStringParam);
+			}).ToList();
 
 			// Send actual request
 			logger.LogDebug($"{correlationId} - Sending request for predictions to \"{url}\"");
-			ResponseModel response = await httpProvider
-				.GetAsync<ResponseModel>(url, getQuery);
+			PredictionResponseModel predictionResponse = await httpProvider
+				.PostAsync<PredictionResponseModel>(url, new PredictionRequestModel(newFileNames));
 
 			// TODO: Save results to DB..
 			// List<PredictionResult> results = new List<PredictionResult>();
-			if (response.Data == null)
+			if (predictionResponse.Data == null)
 			{
 				logger.LogError($"{correlationId} - Predictions from DeepLearning API was not returned.");
 
 				// TODO: Register metrics
-				return response;
+				throw new HttpRequestException($"Response from {url} does not contain any data");
 			}
-				
-			List<PredictionResult> allPredictionResults = response.Data.Select((imagePredictions, i) =>
+			
+			// collect all results (amount: images x labels)
+			List<PredictionResult> allPredictionResults = predictionResponse.Data
+				.Select((imagePredictions, i) =>
 					imagePredictions.Select(prediction => new PredictionResult
 					{
 						Label = prediction.Key,
@@ -108,9 +114,8 @@ namespace PublicApi.Managers
 					return predictions1;
 				});
 
+			// save results to db
 			dbProvider.RegisterPredictionResults(allPredictionResults);
-
-			// TODO: Register Metrics
 			dbProvider.RegisterMetrics(new Metric
 			{
 				WebRequestId = webRequest.WebRequestId,
@@ -118,7 +123,8 @@ namespace PublicApi.Managers
 				Ended = DateTime.Now
 			});
 
-			return response;
+			// map image orig. names to prediction response
+			return new ResponseModel(predictionResponse.Data.ToDictionary(predictions => images[predictionResponse.Data.IndexOf(predictions)]));
 		}
 
 		/// <summary>

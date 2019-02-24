@@ -80,5 +80,14 @@ create table dbo.Metric (
 -- alter table dbo.ImageDefinition
 -- 	drop column MakerNote
 
--- select * from dbo.WebRequest
+select * from ImageDefinition
+select * from PredictionRequest
+select * from PredictionResult
+select * from Metric
 
+select *
+from dbo.WebRequest w
+inner join dbo.ImageDefinition d on w.WebRequestId = d.WebRequestId
+
+truncate table dbo.WebRequest
+delete from dbo.WebRequest

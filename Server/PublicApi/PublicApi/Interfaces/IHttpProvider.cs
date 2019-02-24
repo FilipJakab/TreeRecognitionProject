@@ -6,7 +6,7 @@ namespace PublicApi.Interfaces
 {
 	public interface IHttpProvider
 	{
-		Task<T> Post<T>(string url, Stream fileStream, string fileName);
+		Task<T> PostAsync<T>(string url, object data);
 		Task<T> GetAsync<T>(string url, Dictionary<string, string> requestArgs);
 	}
 }
