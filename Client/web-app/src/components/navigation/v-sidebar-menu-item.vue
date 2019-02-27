@@ -16,25 +16,10 @@
 </template>
 
 <script>
-import {
-	VListTile,
-	VListTileContent,
-	VListTileAction,
-	VListTileTitle,
-	VIcon
-} from 'vuetify/lib'
-
 import { MenuItem } from '../../config/sidebar-menu.config'
 
 export default {
 	name: 'v-sidebar-menu-item',
-	components: {
-		VListTile,
-		VListTileContent,
-		VListTileAction,
-		VListTileTitle,
-		VIcon
-	},
 	props: {
 		item: {
 			type: MenuItem,

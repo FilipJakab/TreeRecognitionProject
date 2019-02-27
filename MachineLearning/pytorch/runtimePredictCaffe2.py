@@ -22,9 +22,11 @@ from constants import (
 
 class Predictor:
 	def __init__(self):
-		self.onnxModel = onnx.load(modelDeployParamsPath)
-		onnx.checker.check_model(self.onnxModel)
-		self.predictor = backend.prepare(self.onnxModel)# , device='CUDA:0')
+		print 'predictor created'
+		onnxModel = onnx.load(modelDeployParamsPath)
+		onnx.checker.check_model(onnxModel)
+		self.predictor = backend.prepare(onnxModel)# , device='CUDA:0')
+		del onnxModel
 	def Run(self, imagePaths):
 		preppedImages = []
 		for imagePath in imagePaths:
@@ -33,8 +35,10 @@ class Predictor:
 					.data.numpy()
 			)
 		# prepedImage = prepedImage.to(device='cuda:0')
-		result = self.predictor.run([np.stack(preppedImages, axis=0)])
-		print result
+		batch = [np.stack(preppedImages, axis=0)]
+		result = self.predictor.run(batch)
+		del batch
+		del preppedImages
 		# return st batch
 		return result[0]
 

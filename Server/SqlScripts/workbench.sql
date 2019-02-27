@@ -14,22 +14,22 @@ create table dbo.WebRequest (
 create table dbo.ImageDefinition (
 	ImageDefinitionId int identity(1, 1) not null primary key,
 	WebRequestId int foreign key references dbo.WebRequest(WebRequestId),
-	FileName nvarchar(36) not null,
+	FileName nvarchar(50) not null,
 	OriginalFileName nvarchar(500),
 	Size bigint not null,
 	-- exif data
-	CameraVendor nvarchar(15),
-	CameraModel nvarchar(20),
-	Orientation nvarchar(15),
+	CameraVendor nvarchar(30),
+	CameraModel nvarchar(30),
+	Orientation nvarchar(30),
 	Taken date,
-	Compression nvarchar(20),
+	Compression nvarchar(30),
 	XResolution float,
 	YResolution float,
 	ResolutionUnit smallint,
 	ExposureTime float,
 	ExposureProgram smallint,
-	ExifVersion varbinary,
-	ComponentConfiguration varbinary,
+	ExifVersion varbinary(500),
+	ComponentConfiguration varbinary(500),
 	ExposureBias float,
 	MaxApertureValue float,
 	ApertureValue float,
@@ -41,7 +41,7 @@ create table dbo.ImageDefinition (
 
 create table dbo.PredictionRequest (
 	PredictionRequestId int identity(1, 1) not null primary key,
-	ImageId int not null foreign key references dbo.ImageDefinition(ImageDefinitionId) on delete cascade,
+	ImageDefinitionId int not null foreign key references dbo.ImageDefinition(ImageDefinitionId) on delete cascade,
 	WebRequestId int not null foreign key references dbo.WebRequest(WebRequestId) on delete cascade
 );
 
@@ -80,14 +80,21 @@ create table dbo.Metric (
 -- alter table dbo.ImageDefinition
 -- 	drop column MakerNote
 
-select * from ImageDefinition
-select * from PredictionRequest
-select * from PredictionResult
-select * from Metric
-
+-- select * from ImageDefinition
+-- select * from PredictionRequest
+-- select * from PredictionResult
+-- select * from Metric
+--
 select *
 from dbo.WebRequest w
-inner join dbo.ImageDefinition d on w.WebRequestId = d.WebRequestId
+-- inner join dbo.ImageDefinition d on w.WebRequestId = d.WebRequestId
+--
+-- delete from dbo.WebRequest
 
-truncate table dbo.WebRequest
-delete from dbo.WebRequest
+alter table dbo.ImageDefinition
+	alter column ComponentConfiguration varbinary(500)
+
+alter table dbo.ImageDefinition
+	alter column ExifVersion varbinary(500)
+
+insert into dbo.MetricType (Code, Value) values ('OVERALL', '')

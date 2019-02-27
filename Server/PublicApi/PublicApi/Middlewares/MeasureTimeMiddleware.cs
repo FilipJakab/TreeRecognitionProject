@@ -21,9 +21,20 @@ namespace PublicApi.Middlewares
 		{
 			Stopwatch watch = Stopwatch.StartNew();
 			
+			context.Response.OnStarting(state =>
+			{
+				((HttpContext) state).Response
+					.Headers.Add(
+						"ElapsedTicks",
+						new StringValues(watch.ElapsedTicks.ToString())
+					);
+
+				return Task.CompletedTask;
+			}, context);
+			
 			await next.Invoke(context);
 
-			context.Response.Headers.Add("ElapsedTicks", new StringValues(watch.ElapsedTicks.ToString()));
+			// context.Response.Headers.Add("ElapsedTicks", new StringValues(watch.ElapsedTicks.ToString()));
 		}
 	}
 }

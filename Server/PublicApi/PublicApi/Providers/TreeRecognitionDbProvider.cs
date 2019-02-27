@@ -54,14 +54,14 @@ namespace PublicApi.Providers
 			});
 		}
 
-		public PredictionRequest RegisterPredictionRequest(int webRequestId, int imageId)
+		public PredictionRequest RegisterPredictionRequest(WebRequest webRequest, ImageDefinition image)
 		{
-			logger.LogTrace($"{correlationId} - Registering PredictionRequest for image id {imageId}");
+			logger.LogTrace($"{correlationId} - Registering PredictionRequest for image id {image}");
 			
 			PredictionRequest predictionRequest = new PredictionRequest
 			{
-				WebRequestId = webRequestId,
-				ImageId = imageId
+				WebRequest = webRequest,
+				ImageDefinition = image
 			};
 			
 			RunWithContext(ctx =>
