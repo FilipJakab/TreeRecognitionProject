@@ -90,8 +90,8 @@ namespace PublicApi.Managers
 					{
 						Label = prediction.Key,
 						Score = prediction.Value,
-						ImageDefinition = imageDefinitions[i],//.ImageDefinitionId,
-						PredictionRequest = predictionRequests[i],//.PredictionRequestId
+						ImageDefinition = imageDefinitions[i],
+						PredictionRequest = predictionRequests[i]
 					}).ToList())
 				.Aggregate((predictions1, predictions2) =>
 				{

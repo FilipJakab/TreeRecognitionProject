@@ -57,10 +57,10 @@ class RootController(Resource):
 				responseObj['data'] = 'Specified file path "%s" was not found' % image
 				return responseObj
 		since = time.time()
-		# results = predictor.Run(images)
-		# softmaxedResults = SoftmaxFn(results)
-		# # print 'softmaxedResults: ', softmaxedResults
-		# responseObj['data'] = InsertLabels(softmaxedResults)
+		results = predictor.Run(images)
+		softmaxedResults = SoftmaxFn(results)
+		# print 'softmaxedResults: ', softmaxedResults
+		responseObj['data'] = InsertLabels(softmaxedResults)
 		# print 'data: ', responseObj['data']
 		responseObj['taken'] = int((time.time() - since) * 1000)
 		responseObj['isOk'] = True

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using PublicApi.Database;
+using PublicApi.ReflectionHelpers;
 
 namespace PublicApi.Controllers.Admin
 {
@@ -19,7 +20,10 @@ namespace PublicApi.Controllers.Admin
 	public class DatabaseController : ControllerBase
 	{
 		private List<PropertyInfo> getContextProperties;
-
+		private readonly ILogger<DatabaseController> logger;
+		private readonly TreeRecognitionDbContext context;
+		private readonly DbContextReflectionHelper reflectionHelper;
+		
 		private List<PropertyInfo> contextProperties =>
 			getContextProperties ?? (getContextProperties = context
 				.GetType()
@@ -28,13 +32,15 @@ namespace PublicApi.Controllers.Admin
 				               prop.PropertyType == typeof(DbSet<>).MakeGenericType(prop.PropertyType.GenericTypeArguments))
 				.ToList());
 
-		private readonly ILogger<DatabaseController> logger;
-		private readonly TreeRecognitionDbContext context;
 
 		public DatabaseController(ILogger<DatabaseController> logger, TreeRecognitionDbContext context)
 		{
 			this.logger = logger;
 			this.context = context;
+			
+			// context.WebRequest.TL
+			
+			reflectionHelper = new DbContextReflectionHelper();
 		}
 
 		[HttpGet("gettables")]
@@ -56,23 +62,42 @@ namespace PublicApi.Controllers.Admin
 			return Ok(tableNames);
 		}
 
-		[HttpGet("gettabledata")]
-		public IActionResult GetTableData(string tableName)
+		[HttpGet("{tableName}/data")]
+		public IActionResult GetTableData([FromRoute] string tableName, [FromQuery] int top = 25)
 		{
 			PropertyInfo requestedTableProperty = contextProperties.FirstOrDefault(field =>
 				field.Name.ToLower().Equals(tableName.ToLower()));
 
 			if (requestedTableProperty == null)
 				return NotFound("Table was not found");
+			
+			// context.WebRequest.Take()
 
-			// Retrieve .ToList Method
-			MethodInfo toListMethodInfo = typeof(Enumerable)
-				.GetMethods(BindingFlags.Public | BindingFlags.Static)
-				.First(method => method.Name == "ToList");
-			MethodInfo genericToList =
-				toListMethodInfo.MakeGenericMethod(requestedTableProperty.PropertyType.GenericTypeArguments);
+			object payload = requestedTableProperty.GetValue(context);
 
-			return Ok(genericToList.Invoke(null, new[] {requestedTableProperty.GetValue(context)}));
+			// payload = reflectionHelper.Take(payload, top);
+			
+			return Ok(reflectionHelper.ToList(payload));
 		}
+
+		// Not working
+		// [HttpDelete("{tableName}")]
+		// public IActionResult Delete([FromRoute] string tableName, [FromBody] string keyColumnName, [FromBody] object key)	
+		// {
+		// 	PropertyInfo requestedTableProperty = contextProperties.FirstOrDefault(field =>
+		// 		field.Name.ToLower().Equals(tableName.ToLower()));
+		// 	
+		// 	if (requestedTableProperty == null)
+		// 		return NotFound("Table was not found");
+		//
+		// 	PropertyInfo tableKeyColumnInfo = requestedTableProperty.PropertyType.GenericTypeArguments.First()
+		// 		.GetProperties()
+		// 		.FirstOrDefault(prop => prop.Name.ToLower().Equals(keyColumnName));
+		//
+		// 	object table = requestedTableProperty.GetValue(context);
+		// 	object found = reflectionHelper.Where(table, tableRow => tableKeyColumnInfo.GetValue(tableRow) == key);
+		//
+		// 	return Ok(found);
+		// }
 	}
 }
