@@ -1,10 +1,8 @@
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using PublicApi.Data;
 
-namespace PublicApi.Interfaces
+namespace PublicApi.Data.Interfaces
 {
 	public interface IImageManager
 	{
