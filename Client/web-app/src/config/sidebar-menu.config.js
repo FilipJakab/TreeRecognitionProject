@@ -19,6 +19,6 @@ export class MenuItem {
 
 export default [
 	new MenuItem('Home', 'home', 'home'),
-	// new MenuItem('')
-	new MenuItem('About', 'about', 'about-outline ')
+	new MenuItem('Admin', 'admin', 'person'),
+	new MenuItem('About', 'about', 'about-outline')
 ]

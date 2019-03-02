@@ -6,8 +6,15 @@
 		<v-toolbar color="indigo" dark fixed app>
 			<v-toolbar-side-icon @click.stop="drawer = !drawer" />
 			<v-toolbar-title>Project: Tree Recognition</v-toolbar-title>
+			<!--<v-toolbar-items>-->
+			<!--</v-toolbar-items>-->
 		</v-toolbar>
 		<v-content>
+			<v-layout justify-center row>
+				<v-flex shrink>
+					<v-breadcrumbs :items="breadcrumbs" divider="/"></v-breadcrumbs>
+				</v-flex>
+			</v-layout>
 			<router-view></router-view>
 		</v-content>
 		<v-footer></v-footer>
@@ -15,33 +22,20 @@
 </template>
 
 <script>
-import {
-	VNavigationDrawer,
-	VFooter,
-	VApp,
-	VToolbar,
-	VContent
-} from 'vuetify/lib'
-
 import VSidebarMenu from './components/navigation/sidebar-menu'
 import Menu from './config/sidebar-menu.config'
 
 export default {
 	name: 'App',
 	components: {
-		VNavigationDrawer,
-		VFooter,
-		VApp,
-		VToolbar,
-		VContent,
 		VSidebarMenu
 	},
-	watch: {
-		$route() {
-			this.drawer = !this.drawer
+	computed: {
+		breadcrumbs () {
+			// return this.$route
 		}
 	},
-	data() {
+	data () {
 		return {
 			drawer: false,
 			menu: Menu

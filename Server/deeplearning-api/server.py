@@ -31,24 +31,21 @@ def InsertLabels(imagesPredictions):
 	results = []
 	for imagePrediction in imagesPredictions:
 		prediction = {}
-		print imagePrediction
 		for label in labels.keys():
 			prediction[label] = imagePrediction[labels[label]]
 		results.append(prediction)
 	return results
 
 predictor = Predictor()
-
 class RootController(Resource):
 	def post(self):
 		responseObj = {
-			'data': '',
+			'data': [],
 			'isOk': False,
 			'taken': -1
 		}
 		# validate input
 		imagesJson = json.loads(request.data)
-		print imagesJson
 		if 'Images' not in imagesJson.keys():
 			responseObj['data'] = 'images were not provided'
 			return responseObj, 400
@@ -68,32 +65,21 @@ class RootController(Resource):
 		responseObj['taken'] = int((time.time() - since) * 1000)
 		responseObj['isOk'] = True
 		self.StringifyNumbers(responseObj)
-		print 'stringified: ', responseObj
 		return responseObj
-	def StringifyNumbers(self, obj):
-		print '\ngot ', obj, ' to process'		
+	def StringifyNumbers(self, obj):	
 		if type(obj) is list: 
 			for i in range(len(obj)):
 				if type(obj[i]) in [int, float, np.float32]:
-					print obj[i], ' is number, converting..'
 					obj[i] = str(obj[i])
 				elif type(obj[i]) in [dict, list]:
-					print obj[i], ' is object/list, recursively converting..'
 					self.StringifyNumbers(obj[i])
 			return
 		for key in obj.keys():
 			valType = type(obj[key])
-			print 'type of objs val: ', valType
 			if valType in [int, float, np.float32]:
-				print obj[key], ' is number, converting..'
 				obj[key] = str(obj[key])
 			elif valType in [dict, list]:
-				print obj[key], ' is object/list, recursively converting..'
 				self.StringifyNumbers(obj[key])
-		print '\n'
-
-	def check_file_extension(self, filename):
-		return filename.split('.')[-1] in app.config['ALLOWED_IMAGE_EXETENSION']
 
 # class DemoController(Resource):
 # 	"""docstring for DemoController"""

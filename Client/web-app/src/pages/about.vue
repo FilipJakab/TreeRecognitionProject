@@ -1,7 +1,7 @@
 <template>
 	<v-container fluid>
 		<v-layout>
-			<v-flex align-self-center md4>
+			<v-flex align-self-center shrink>
 				<h1 class="display4">
 					About
 				</h1>

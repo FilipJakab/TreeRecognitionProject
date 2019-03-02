@@ -1,14 +1,12 @@
 <template>
 	<v-container grid-list-md text-xs-center fluid>
-		<v-layout row wrap>
-			<v-flex xs12 md10>
+		<v-layout col>
+			<v-flex shrink xs12 md2>
 				<v-file-field v-model="imagesPayload" label="Select images" multiple />
 			</v-flex>
-			<v-flex md1 offset-md1>
-				<v-btn
-				:loading="processing"
-				:disabled="processing"
-				@click="SendImages">
+			<v-spacer />
+			<v-flex md1>
+				<v-btn :loading="processing" :disabled="processing" @click="SendImages">
 					Send
 					<v-icon right>
 						cloud_upload
@@ -18,11 +16,10 @@
 		</v-layout>
 		<v-layout row wrap v-for="imagesRow in imagesMatrix" :key="imagesRow[0]">
 			<v-flex
-				xs12
-				:class="imagesFlexClasses"
-				v-for="image in imagesRow[1]"
-				:key="image.id"
-			>
+			xs12
+			:class="imagesFlexClasses"
+			v-for="image in imagesRow[1]"
+			:key="image.id">
 				<v-image-prediction :item="image" />
 			</v-flex>
 		</v-layout>
@@ -46,14 +43,17 @@ export default {
 		VImagePrediction
 	},
 	watch: {
-		imagesPayload(n) {
+		imagesPayload (n) {
 			console.log('images changed.. : ', n)
 
 			for (let key in n) {
 				let image = n[key]
 
 				// prevent adding existing files..
-				if (!(image instanceof File) || this.images.indexOf(image) !== -1)
+				if (
+					!(image instanceof File) ||
+					this.images.map(x => x.name).indexOf(image.name) !== -1
+				)
 					continue
 
 				this.images.push(image)
@@ -62,12 +62,12 @@ export default {
 		}
 	},
 	computed: {
-		imagesFlexClasses() {
+		imagesFlexClasses () {
 			let res = {}
 			res['md' + Number(12 / this.imagesPerRow)] = true
 			return res
 		},
-		imagesMatrix() {
+		imagesMatrix () {
 			let rows = []
 
 			for (
@@ -87,7 +87,7 @@ export default {
 			return rows
 		}
 	},
-	data() {
+	data () {
 		return {
 			imagesPerRow: 3,
 			imagesPayload: [],
@@ -99,31 +99,28 @@ export default {
 		}
 	},
 	methods: {
-		async SendImages() {
-			if (this.processing)
-				return
-			
+		async SendImages () {
+			if (this.processing) return
+
 			this.processing = true
 			try {
-				this.predictions = await this.recognitionManager.GetPredictions(
-					this.images
-				)
-				
-				console.log(this.predictions)
-			}
-			finally {
+				this.predictions = (await this.recognitionManager.GetPredictions(
+					this.images.filter(
+						image => this.imagePredictions.indexOf(image.filename) === -1
+					) // skip predicted images
+				)).data
+				console.log('predictions: ', this.predictions)
+
+				this.imagePredictions.forEach(item => {
+					item.results = this.predictions[item.file.name]
+				})
+			} finally {
 				this.processing = false
 			}
 		}
 	},
 	mounted() {
-		this.recognitionManager = new ImageRecognitionManager(Axios/*.create({
-			baseURL: process.env.VUE_APP_BASE_ENDPOINT_URL,
-			withCredentials: false,
-			headers: {
-				'Content-Type': 'application/json'
-			}
-		})*/)
+		this.recognitionManager = new ImageRecognitionManager(this.$http)
 	}
 }
 </script>

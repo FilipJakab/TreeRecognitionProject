@@ -11,16 +11,18 @@ export default class ImagePrediction {
 		this.results = results || null
 	}
 
-	get src() {
-		return this._cachedSrc ||
-		new Promise((resolve, _) => {
-			let reader = new FileReader()
-			reader.onload = () => {
-				this._cachedSrc = reader.result
-				resolve(reader.result)
-			}
+	get src () {
+		return (
+			this._cachedSrc ||
+			new Promise((resolve, _) => {
+				let reader = new FileReader()
+				reader.onload = () => {
+					this._cachedSrc = reader.result
+					resolve(reader.result)
+				}
 
-			reader.readAsDataURL(this.file)
-		})
+				reader.readAsDataURL(this.file)
+			})
+		)
 	}
 }

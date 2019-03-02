@@ -21,7 +21,9 @@ namespace PublicApi.Middlewares
 			this.next = next;
 		}
 
-		public async Task InvokeAsync(HttpContext context, ILogger<UnknownErrorCatchMiddleware> logger,
+		public async Task InvokeAsync(
+			HttpContext context,
+			ILogger<UnknownErrorCatchMiddleware> logger,
 			CorrelationService correlationService)
 		{
 			try

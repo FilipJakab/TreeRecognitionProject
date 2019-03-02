@@ -11,10 +11,10 @@ namespace PublicApi.Database
         }
 
         public int PredictionRequestId { get; set; }
-        public int ImageId { get; set; }
+        public int ImageDefinitionId { get; set; }
         public int WebRequestId { get; set; }
 
-        public ImageDefinition Image { get; set; }
+        public ImageDefinition ImageDefinition { get; set; }
         public WebRequest WebRequest { get; set; }
         public ICollection<PredictionResult> PredictionResult { get; set; }
     }

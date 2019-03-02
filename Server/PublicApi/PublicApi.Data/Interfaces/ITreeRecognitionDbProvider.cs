@@ -8,7 +8,7 @@ namespace PublicApi.Data.Interfaces
 	{
 		WebRequest RegisterRequest(Guid webRequestCorrelationId);
 		void RegisterImageDefinition(ImageDefinition imageDefinition);
-		PredictionRequest RegisterPredictionRequest(int webRequestId, int imageId);
+		PredictionRequest RegisterPredictionRequest(WebRequest webRequest, ImageDefinition image);
 		void RegisterPredictionResults(List<PredictionResult> results);
 		void RegisterMetrics(Metric metrics);
 	}

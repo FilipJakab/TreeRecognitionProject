@@ -14,13 +14,7 @@ import { Routes } from './config/vue-router.config'
 Vue.config.productionTip = false
 
 // inject Axios to every Vue instance
-Vue.prototype.$http = Axios.create({
-	baseURL: process.env.VUE_APP_BASE_ENDPOINT_URL,
-	withCredentials: false,
-	headers: {
-		'Content-Type': 'application/json'
-	}
-})
+Vue.prototype.$http = Axios
 
 Vue.use(VueRouter)
 

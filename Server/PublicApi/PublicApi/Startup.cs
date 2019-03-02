@@ -1,3 +1,4 @@
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -55,6 +56,13 @@ namespace PublicApi
 			services.AddTransient<IImageManager, ImageManager>();
 			services.AddTransient<IHttpProvider, HttpProvider>();
 			services.AddTransient<ITreeRecognitionDbProvider, TreeRecognitionDbProvider>();
+			
+			// // JWT Bearer authentication
+			// services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+			// 	.AddJwtBearer(options =>
+			// 	{
+			// 		options.
+			// 	});
 
 			services.AddMvc(options =>
 				{
@@ -79,11 +87,17 @@ namespace PublicApi
 
 			app.UseCors();
 			//app.UseHttpsRedirection();
+			
+			// Add authentication if request tries to reach admin related APIs..
+			// app.Map("/admin/api", builder =>
+			// {
+			// 	app.UseAuthentication();
+			// })
 
 			app.UseMiddleware<MeasureTimeMiddleware>();
-			app.UseMiddleware<UnknownErrorCatchMiddleware>();
-			app.UseMiddleware<FlurlHttpCatchMiddleware>();
 			app.UseMiddleware<CommonSqlErrorCatchMiddleware>();
+			app.UseMiddleware<FlurlHttpCatchMiddleware>();
+			app.UseMiddleware<UnknownErrorCatchMiddleware>();
 			
 			app.UseMvc();
 		}
