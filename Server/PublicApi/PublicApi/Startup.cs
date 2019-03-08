@@ -86,6 +86,9 @@ namespace PublicApi
 			}
 
 			app.UseCors();
+
+			app.UseStaticFiles();
+			
 			//app.UseHttpsRedirection();
 			
 			// Add authentication if request tries to reach admin related APIs..
