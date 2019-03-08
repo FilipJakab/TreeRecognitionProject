@@ -1,5 +1,5 @@
 {
 	"ConnectionStrings": {
-		"TreeRecognitionDb": ""
+		"TreeRecognitionDb": "Server=localhost;Database=TreeRecognitionDb;User Id=SA;Password=Sel jsem pro modreho slona 2x"
 	}
 }
