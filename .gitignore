@@ -472,4 +472,4 @@ yarn-error.log*
 # custom
 images/
 MachineLearning/deeplearning-api/upload_dir/
-
+Server/PublicApi/PublicApi/ConnectionStrings.json
