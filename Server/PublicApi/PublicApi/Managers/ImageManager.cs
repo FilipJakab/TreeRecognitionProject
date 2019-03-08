@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using PublicApi.Database;
 using PublicApi.Helpers;
-using PublicApi.Interfaces;
 using PublicApi.Data;
 using PublicApi.Data.Interfaces;
 using PublicApi.Services;

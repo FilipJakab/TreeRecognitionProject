@@ -8,7 +8,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using PublicApi.Database;
-using PublicApi.Interfaces;
 using PublicApi.Managers;
 using PublicApi.Middlewares;
 using PublicApi.Data.Configurations;
@@ -37,16 +36,16 @@ namespace PublicApi
 			services.AddCors(options => options
 				.AddPolicy("AllowedOriginsPolicy", builder =>
 					builder
-						.AllowAnyOrigin()
-						// .WithOrigins("http://localhost:8080/")
+						//.AllowAnyOrigin()
+						.WithOrigins("http://localhost:8080/*")
 						.AllowAnyHeader()
 						.AllowAnyMethod()));
 
 			// For linux's reversed proxy..
-			services.Configure<ForwardedHeadersOptions>(opts =>
-			{
-				opts.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-			});
+			//services.Configure<ForwardedHeadersOptions>(opts =>
+			//{
+			//	opts.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+			//});
 
 			services.AddDbContext<TreeRecognitionDbContext>(opts =>
 				opts.UseSqlServer(Configuration.GetConnectionString("TreeRecognitionDb")));

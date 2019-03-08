@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,7 +8,7 @@ using Flurl;
 using Flurl.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using PublicApi.Interfaces;
+using PublicApi.Data.Interfaces;
 using PublicApi.Services;
 
 namespace PublicApi.Providers

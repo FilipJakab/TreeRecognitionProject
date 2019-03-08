@@ -1,8 +1,7 @@
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 
-namespace PublicApi.Interfaces
+namespace PublicApi.Data.Interfaces
 {
 	public interface IHttpProvider
 	{

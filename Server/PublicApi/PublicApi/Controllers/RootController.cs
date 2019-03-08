@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net.Mime;
 using System.Threading.Tasks;
@@ -8,9 +8,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using PublicApi.Interfaces;
 using PublicApi.Data;
 using PublicApi.Data.Configurations;
+using PublicApi.Data.Interfaces;
 using PublicApi.Services;
 
 namespace PublicApi.Controllers

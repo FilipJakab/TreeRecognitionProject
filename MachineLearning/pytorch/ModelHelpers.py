@@ -92,28 +92,41 @@ def InitModel(modelTrainParamsPath, classCount, device):
 	return model.to(device=device)
 
 def RunTraining(model, lossFn, optimizer, scheduler, loader, datasetSize, epochs, device):
+	# zaloha vah modelu
 	weightsCheckpoint = copy.deepcopy(model.state_dict())
 	bestAcc = 0.
 
+	# prepnuti modelu do trenovaciho modu
+	# tj. mod pri kterem se aktualizuji vahy (v testovem, ci validacnim se optimizer nepouziva)
 	model.train()
+	# trenovani nekolikrat vsechny obrazky
 	for epoch in range(epochs):
 		scheduler.step()
 
 		sumLoss, sumCorrcects = 0., 0
 
+		# postupna iterace nad vesmi obrazky
 		for data, label in loader:
+			# preneseni batche z RAM do zarizeni (pravdepodobne pamet GPU)
 			data = data.to(device=device)
 			label = label.to(device=device)
 
 			# clear gradients -> on each grad calculation -> grads are incremented
+			# pro kazdy batch musi byt hodnoty gradientu vynulovany
 			optimizer.zero_grad()
 			# forward pass
+			# batch je prohnan modelem
 			pred = model(data)
 			_, preds = torch.max(pred, 1)
+
+			# ziska se chybovost
 			loss = lossFn(pred, label)
+
+			# backpropagace (zpetna aktualizace vah)
 			loss.backward()
 			optimizer.step()
 
+			# ukladani mezidat
 			sumLoss += loss.item() * data.size(0)
 			sumCorrcects += torch.sum(preds == label.data)
 
@@ -123,6 +136,8 @@ def RunTraining(model, lossFn, optimizer, scheduler, loader, datasetSize, epochs
 		epochAcc = sumCorrcects.double() / datasetSize
 		print 'loss: %0.4f \nacc: %0.4f' % (epochLoss, epochAcc)
 
+		# pokud jsou vysledky prozatim nejlepsi,
+		# zaloha vsech vah
 		if epochAcc > bestAcc:
 			bestAcc = epochAcc
 			weightsCheckpoint = copy.deepcopy(model.state_dict())
