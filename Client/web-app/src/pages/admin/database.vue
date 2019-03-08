@@ -2,13 +2,23 @@
 	<v-container fluid class="pa-0">
 		<v-layout row wrap justify-space-around>
 			<v-flex xs12 md9>
-				<v-table-view
-					v-if="tableFromQuery"
-					:table-name="tableFromQuery"
-					:items="tableData"
-					@onDelete="handleItemDelete"
-				/>
-			</v-flex>
+				<!--<v-layout col>
+					<v-flex>-->
+						<v-table-view
+							v-if="tableFromQuery"
+							:table-name="tableFromQuery"
+							:items="tableData"
+							:is-loading="loaderIsActive"/>
+						<!--@onDelete="handleItemDelete"
+							@onSelectedChanged="sel => selectedRows = sel"
+							@onDeleteManyClicked="handleDeleteSelected"
+							@onSave="saveChanges"-->
+					</v-flex>
+					<!--<v-flex>
+						<v-pagination @input="changePage" total-visible="7" />
+					</v-flex>
+				</v-layout>
+			</v-flex>-->
 			<v-flex xs12 md2 order-xs1>
 				<v-card>
 					<v-list>
@@ -22,7 +32,7 @@
 					</v-list>
 				</v-card>
 			</v-flex>
-			<v-flex shrink>
+			<!--<v-flex shrink>
 				<v-dialog :value="loaderIsActive"
         hide-overlay
         persistent
@@ -34,7 +44,7 @@
 						</v-card-text>
 					</v-card>
 				</v-dialog>
-			</v-flex>
+			</v-flex>-->
 		</v-layout>
 	</v-container>
 </template>
@@ -70,16 +80,31 @@ export default {
 			loadings: 0, // things being loaded..
 			tables: [],
 			tableData: [],
-			deletedTableData: []
+			currentPage: 0
+			/*selectedRows: [],
+			deletedTableData: []*/
 		}
 	},
 	methods: {
+		/*saveChanges () {
+			if (this.deletedTableData && this.deletedTableData.length > 0) {
+			
+			}
+		},
 		handleItemDelete (index) {
 			console.log('item to be deleted: ', this.tableData[index])
 			
 			// move object to deleted heap
 			this.deletedTableData.push(this.tableData.splice(index, 1)[0])
 		},
+		handleDeleteSelected () {
+			if (!this.selectedRows || this.selectedRows.length == 0)
+				return
+			
+			this.selectedRows.forEach(this.deletedTableData.push)
+			
+			this.selectedRows = []
+		},*/
 		async loadTables () {
 			this.loadings++
 			try {
@@ -103,6 +128,7 @@ export default {
 		}
 	},
 	mounted () {
+		console.log('mounted')
 		this.dbManager = new DatabaseManager(this.$http, process.env.VUE_APP_BASE_ENDPOINT_URL)
 		this.loadTables()
 		this.loadTableData(this.$route)

@@ -10,7 +10,7 @@ export default class DatabaseManager extends HttpProvider {
 	}
 
 	async GetTableData(tableName) {
-		return (await this.GetAsync('admin/database/gettabledata', {
+		return (await this.GetAsync(`admin/database/${tableName}/data`, {
 			params: {
 				tableName
 			}

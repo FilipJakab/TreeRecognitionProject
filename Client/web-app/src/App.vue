@@ -6,15 +6,20 @@
 		<v-toolbar color="indigo" dark fixed app>
 			<v-toolbar-side-icon @click.stop="drawer = !drawer" />
 			<v-toolbar-title>Project: Tree Recognition</v-toolbar-title>
-			<!--<v-toolbar-items>-->
-			<!--</v-toolbar-items>-->
+			<v-toolbar-items>
+				<v-breadcrumbs :items="breadcrumbs" divider="/" dark>
+					<template slot="item" slot-scope="props">
+						<span v-if="props.item.disabled">
+							{{props.item.text}}
+						</span>
+						<router-link v-else :to="props.item.href" class="white--text">
+							{{props.item.text}}
+						</router-link>
+					</template>
+				</v-breadcrumbs>
+			</v-toolbar-items>
 		</v-toolbar>
 		<v-content>
-			<v-layout justify-center row>
-				<v-flex shrink>
-					<v-breadcrumbs :items="breadcrumbs" divider="/"></v-breadcrumbs>
-				</v-flex>
-			</v-layout>
 			<router-view></router-view>
 		</v-content>
 		<v-footer></v-footer>
@@ -32,7 +37,12 @@ export default {
 	},
 	computed: {
 		breadcrumbs () {
-			// return this.$route
+			let { matched } = this.$route
+			return matched.map(route => ({
+				text: route.meta.breadcrumb,
+				disabled: matched.indexOf(route) == (matched.length - 1),
+				href: route.path
+			}))
 		}
 	},
 	data () {

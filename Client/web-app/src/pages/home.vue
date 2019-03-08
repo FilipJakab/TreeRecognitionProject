@@ -14,13 +14,43 @@
 				</v-btn>
 			</v-flex>
 		</v-layout>
-		<v-layout row wrap v-for="imagesRow in imagesMatrix" :key="imagesRow[0]">
+		<!--Show images of current request-->
+		<v-layout row wrap
+		v-for="imagesRow in imagesMatrix(imagePredictions).reverse()" :key="imagesRow[0]">
 			<v-flex
-			xs12
-			:class="imagesFlexClasses"
-			v-for="image in imagesRow[1]"
-			:key="image.id">
+				xs12
+				:class="imagesFlexClasses"
+				v-for="image in imagesRow[1]"
+				:key="image.id">
 				<v-image-prediction :item="image" />
+			</v-flex>
+		</v-layout>
+		<!--Show images of previous requests..-->
+		<v-layout col wrap>
+			<v-flex xs12 v-for="(request, index) in predictionRequestHistory">
+				<!--Visual divider-->
+				<v-layout row align-center>
+					<v-flex xs5>
+						<v-divider />
+					</v-flex>
+					<v-flex xs2>
+						<h4 class="display2">
+							{{index}}
+						</h4>
+					</v-flex>
+					<v-flex xs5>
+						<v-divider />
+					</v-flex>
+				</v-layout>
+				<v-layout row wrap v-for="imagesRow in imagesMatrix(request.imagePredictions)" :key="imagesRow[0]">
+					<v-flex
+						xs12
+						:class="imagesFlexClasses"
+						v-for="image in imagesRow[1]"
+						:key="image.id">
+						<v-image-prediction :item="image" />
+					</v-flex>
+				</v-layout>
 			</v-flex>
 		</v-layout>
 	</v-container>
@@ -64,63 +94,68 @@ export default {
 	computed: {
 		imagesFlexClasses () {
 			let res = {}
-			res['md' + Number(12 / this.imagesPerRow)] = true
+			res['md' + Number(Math.round(12 / this.imagesPerRow))] = true
 			return res
-		},
-		imagesMatrix () {
-			let rows = []
-
-			for (
-				let i = 0;
-				i < Math.ceil(this.imagePredictions.length / this.imagesPerRow);
-				i++
-			) {
-				rows.push([
-					Math.random(),
-					this.imagePredictions.slice(
-						i * this.imagesPerRow,
-						(i + 1) * this.imagesPerRow
-					)
-				])
-			}
-
-			return rows
 		}
 	},
 	data () {
 		return {
-			imagesPerRow: 3,
+			imagesPerRow: 4,
 			imagesPayload: [],
 			imagePredictions: [],
 			images: [],
 			predictions: [],
+			predictionRequestHistory: [],
 			httpProvider: null,
 			processing: false
 		}
 	},
 	methods: {
+		imagesMatrix (predictions) {
+			let rows = []
+			
+			for (
+				let i = 0;
+				i < Math.ceil(predictions.length / this.imagesPerRow);
+				i++
+			) {
+				rows.push([
+					Math.random(),
+					predictions.slice(
+						i * this.imagesPerRow,
+						(i + 1) * this.imagesPerRow
+					)
+				])
+			}
+			
+			return rows
+		},
 		async SendImages () {
 			if (this.processing) return
 
 			this.processing = true
+			let requestPromise
 			try {
-				this.predictions = (await this.recognitionManager.GetPredictions(
-					this.images.filter(
-						image => this.imagePredictions.indexOf(image.filename) === -1
-					) // skip predicted images
-				)).data
-				console.log('predictions: ', this.predictions)
-
-				this.imagePredictions.forEach(item => {
-					item.results = this.predictions[item.file.name]
-				})
+				requestPromise = this.recognitionManager.GetPredictions(this.images)
 			} finally {
+				this.predictions = (await requestPromise).data
+				
+				// move data to history.. (to prevent mixing up..)
+				console.log('images: ', this.images)
+				console.log('predictions: ', this.predictions)
+				this.predictionRequestHistory.push({
+					id: Math.floor(Math.random() * 100),
+					imagePredictions: this.images.map(image => new ImagePrediction(image, this.predictions[image.name]))
+				})
+				
+				this.imagePredictions = []
+				this.images = []
 				this.processing = false
 			}
 		}
 	},
 	mounted() {
-		this.recognitionManager = new ImageRecognitionManager(this.$http)
+		this.recognitionManager = new ImageRecognitionManager(this.$http, process.env.VUE_APP_BASE_ENDPOINT_URL)
 	}
 }
 </script>

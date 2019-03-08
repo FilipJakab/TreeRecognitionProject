@@ -4,28 +4,51 @@
 			<h5 class="display-1">
 				{{tableName}}
 			</h5>
+			<!--<v-layout row wrap>
+				<v-flex xs12 md8>
+				
+				</v-flex>
+				<v-flex xs12 md2>
+					<v-btn @click="onDeleteManyClicked" color="danger">
+						Delete selected
+					</v-btn>
+				</v-flex>
+				<v-flex xs12 md2>
+					<v-btn @click="onSave">
+						Save
+					</v-btn>
+				</v-flex>
+			</v-layout>-->
 		</v-card-title>
 		<v-layout col wrap>
 			<v-flex xs12 md12>
-				<v-data-table :headers="headers" :items="items">
+				<v-data-table
+				:headers="headers"
+				:items="items"
+				:loading="isLoading"
+				select-all
+				v-model="selected">
 					<template slot="headers" slot-scope="props">
 						<th class="text-xs-left"
 						v-for="header in props.headers" :key="header.value">
 							{{header.text}}
 						</th>
-						<th class="text-xs-right">
+						<!--<th class="text-xs-right">
 							Delete
-						</th>
+						</th>-->
 					</template>
 					<template slot="items" slot-scope="props">
+						<!--<td>
+							<v-checkbox v-model="props.selected" primary hide-details />
+						</td>-->
 						<td v-for="header in headers" :key="header.value">
 							{{ props.item[header.value] }}
 						</td>
-						<td class="text-xs-right">
+						<!--<td class="text-xs-right">
 							<v-btn icon flat color="red" @click="onDelete(items.indexOf(props.item))">
 								<v-icon>close</v-icon>
 							</v-btn>
-						</td>
+						</td>-->
 					</template>
 				</v-data-table>
 			</v-flex>
@@ -35,11 +58,17 @@
 
 <script>
 export default {
-	name: 'table-view',
+	name: 'v-table-view',
 	props: [
 		'tableName',
 		'items',
+		'isLoading'
 	],
+	watch: {
+		selected (val) {
+			this.$emit('onSelectedChanged', val)
+		}
+	},
 	computed: {
 		headers () {
 			if ((this.items || {}).length === 0)
@@ -61,10 +90,21 @@ export default {
 			return keys
 		}
 	},
-	methods: {
-		onDelete (index) {
-			this.$emit('onDelete', index)
+	data () {
+		return {
+			selected: []
 		}
+	},
+	methods: {
+		/*onDelete (index) {
+			this.$emit('onDelete', index)
+		},
+		onSave () {
+			this.$emit('onSave')
+		},
+		onDeleteManyClicked () {
+			this.$emit('onDeleteManyClicked')
+		}*/
 	}
 }
 </script>

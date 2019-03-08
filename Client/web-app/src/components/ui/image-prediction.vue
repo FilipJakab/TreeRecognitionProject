@@ -1,10 +1,10 @@
 <template>
 	<v-card>
 		<v-img :src="imageSrc" height="200" />
-		<v-card-title primary-title>
-			<h3 class="headline mb-0">{{ item.file.name }}</h3>
+		<v-card-title primary-title class="pa-1">
+			<h2>{{ item.file.name }}</h2>
 		</v-card-title>
-		<v-card-text>
+		<v-card-text class="pa-0">
 			<v-list dense>
 				<v-list-tile v-for="predKey in orderedResultKeys" :key="predKey">
 					<v-list-tile-content>

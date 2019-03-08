@@ -11,7 +11,7 @@ export default class ImageRecognitionManager extends HttpProvider {
 			payload.append('images', image)
 		})
 
-		return (await this.PostAsync(this.baseUrl, payload, {
+		return (await this.PostAsync('', payload, {
 			headers: {
 				'Content-Type': 'multipart/form-data'
 			}
