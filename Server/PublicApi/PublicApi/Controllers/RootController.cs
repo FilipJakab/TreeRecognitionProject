@@ -46,7 +46,7 @@ namespace PublicApi.Controllers
 		[AllowAnonymous]
 		public IActionResult Post([FromForm(Name = "images")] List<IFormFile> images)
 		{
-			logger.LogInformation($"{correlationId} - POST request for image processing");
+			logger.LogInformation($"{correlationId} - POST request for image predictions");
 
 			if (images.Count == 0)
 				return BadRequest("No files were provided");

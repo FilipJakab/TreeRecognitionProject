@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -21,6 +21,7 @@ namespace PublicApi
 			.AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json",
 				optional: true)
 			.AddJsonFile("ConnectionStrings.json", false)
+			.AddJsonFile("Keys.json", false)
 			.AddEnvironmentVariables()
 			.Build();
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using PublicApi.Database;
 using PublicApi.Managers;
@@ -36,33 +38,37 @@ namespace PublicApi
 			services.AddCors(options => options
 				.AddPolicy("AllowedOriginsPolicy", builder =>
 					builder
-						//.AllowAnyOrigin()
-						.WithOrigins("http://localhost:8080/*")
+						.WithOrigins("http://localhost:1111/*")
 						.AllowAnyHeader()
 						.AllowAnyMethod()));
 
 			// For linux's reversed proxy..
-			//services.Configure<ForwardedHeadersOptions>(opts =>
-			//{
-			//	opts.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-			//});
+			services.Configure<ForwardedHeadersOptions>(opts =>
+			{
+				opts.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+			});
 
 			services.AddDbContext<TreeRecognitionDbContext>(opts =>
 				opts.UseSqlServer(Configuration.GetConnectionString("TreeRecognitionDb")));
-
-			// services.AddHttpContextAccessor();
 
 			services.AddScoped<CorrelationService>();
 			services.AddTransient<IImageManager, ImageManager>();
 			services.AddTransient<IHttpProvider, HttpProvider>();
 			services.AddTransient<ITreeRecognitionDbProvider, TreeRecognitionDbProvider>();
-			
+
 			// // JWT Bearer authentication
-			// services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-			// 	.AddJwtBearer(options =>
-			// 	{
-			// 		options.
-			// 	});
+			services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+				.AddJwtBearer(options =>
+				{
+					options.TokenValidationParameters = new TokenValidationParameters
+					{
+						ValidateIssuer = true,
+						ValidateAudience = true,
+						ValidateLifetime = true,
+						ValidateIssuerSigningKey = true,
+						IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration.GetSection("Keys")["JwtKey"]))
+					};
+				});
 
 			services.AddMvc(options =>
 				{
@@ -88,14 +94,10 @@ namespace PublicApi
 			app.UseCors();
 
 			app.UseStaticFiles();
-			
+
 			//app.UseHttpsRedirection();
-			
-			// Add authentication if request tries to reach admin related APIs..
-			// app.Map("/admin/api", builder =>
-			// {
-			// 	app.UseAuthentication();
-			// })
+
+			app.UseAuthentication();
 
 			app.UseMiddleware<MeasureTimeMiddleware>();
 			app.UseMiddleware<CommonSqlErrorCatchMiddleware>();
