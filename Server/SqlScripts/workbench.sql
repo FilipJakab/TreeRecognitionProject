@@ -61,6 +61,14 @@ create table dbo.Metric (
 	Ended date not null,
 );
 
+create table dbo.[User] (
+  UserId int identity(1, 1) not null primary key,
+  UserName nvarchar(50) not null,
+  Password nvarchar(200) not null,
+);
+
+drop table dbo.[User]
+
 -- alter table dbo.ImageDefinition
 -- 	drop column Size
 --

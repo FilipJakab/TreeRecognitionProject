@@ -71,8 +71,9 @@ def InitModel(modelTrainParamsPath, classCount, device):
 		lastLayerInputSize = model.fc.in_features
 		model.fc = nn.Linear(lastLayerInputSize, classCount)
 
-		model.load_state_dict(torch.load(modelTrainParamsPath))
-		print 'model\'s weights were loaded from pytorch file: "%s"' % modelTrainParamsPath
+		if raw_input('Do you want to load model from "%s"? ' % modelTrainParamsPath) in ['y', 'Y', '', 'yes']:
+			model.load_state_dict(torch.load(modelTrainParamsPath))
+			print 'model\'s weights were loaded from pytorch file: "%s"' % modelTrainParamsPath
 
 		# freeze all layers
 		# for param in model.parameters():

@@ -21,7 +21,6 @@ namespace PublicApi
 			.AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json",
 				optional: true)
 			.AddJsonFile("ConnectionStrings.json", false)
-			.AddJsonFile("Keys.json", false)
 			.AddEnvironmentVariables()
 			.Build();
 
@@ -39,6 +38,7 @@ namespace PublicApi
 		{
 			IWebHostBuilder webHostBuilder = WebHost.CreateDefaultBuilder(args)
 				.UseStartup<Startup>()
+				.UseUrls(Configuration.GetSection("AppUrls").Get<string[]>())
 				.UseSerilog(ConfigureSerilog); // Serilog usage as the logging provider
 
 			IWebHost webHost = webHostBuilder.Build();

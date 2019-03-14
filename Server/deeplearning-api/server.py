@@ -24,10 +24,10 @@ app = Flask(__name__)
 # app.config['ALLOWED_IMAGE_EXETENSION'] = set(['png', 'jpg', 'jpeg'])
 
 api = Api(app)
+with open(datasetLabelsPath, 'r') as f:
+		labels = json.load(f)
 
 def InsertLabels(imagesPredictions):
-	with open(datasetLabelsPath, 'r') as f:
-		labels = json.load(f)
 	results = []
 	for imagePrediction in imagesPredictions:
 		prediction = {}
@@ -36,7 +36,6 @@ def InsertLabels(imagesPredictions):
 		results.append(prediction)
 	return results
 
-predictor = Predictor()
 class RootController(Resource):
 	def post(self):
 		responseObj = {
@@ -56,6 +55,8 @@ class RootController(Resource):
 				# print 'file at "%s" was not found..' % image
 				responseObj['data'] = 'Specified file path "%s" was not found' % image
 				return responseObj
+		
+		predictor = Predictor()
 		since = time.time()
 		results = predictor.Run(images)
 		softmaxedResults = SoftmaxFn(results)

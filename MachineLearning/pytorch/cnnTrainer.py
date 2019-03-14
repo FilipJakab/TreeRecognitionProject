@@ -21,7 +21,7 @@ from torchvision import datasets, models, transforms
 import ModelHelpers as MH
 
 # set path to model weights download folder
-os.environ['TORCH_MODEL_ZOO'] = expanduser('~/workbench/temp/pytorch_home')
+os.environ['TORCH_MODEL_ZOO'] = expanduser('~/workbench/temp/pytorch-home')
 
 # config
 from constants import (
@@ -37,6 +37,7 @@ from constants import (
 
 # preparing device
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+# device = torch.device('cpu')
 
 dataset = datasets.ImageFolder(dataDir, trainTransformationFlow)
 dataLoader = torch.utils.data.DataLoader(dataset, batch_size=batchSize, shuffle=True, num_workers=4)
@@ -52,7 +53,7 @@ total classes: %d, total dataset size: %d, epochs: %d' % (dataClasses, datasetSi
 print 'train params exists: ', isfile(modelTrainParamsPath)
 
 model = MH.InitModel(modelTrainParamsPath, dataClasses, device)
-print 'model loaded to device: %s' % torch.cuda.get_device_name(device)
+print 'model loaded to device: %s' % (torch.cuda.get_device_name(device) if device.type != 'cpu' else 'cpu')
 
 # prepare stuff for training
 lossFn = nn.CrossEntropyLoss()
@@ -74,11 +75,11 @@ model = MH.RunTraining(
 
 print 'training done\n (%d seconds taken)' % int(time.time() - since)
 
-if raw_input('Do y want to save model to "%s"? ' % modelTrainParamsPath) in ['y', 'Y', '', 'yes']:
+if raw_input('Do you want to save model to "%s"? ' % modelTrainParamsPath) in ['y', 'Y', '', 'yes']:
 	print 'saving..'
 	torch.save(model.state_dict(), modelTrainParamsPath)
 
-if raw_input('Do y want to export model to "%s"? ' % modelDeployParamsPath) in ['y', 'Y', '', 'yes']:
+if raw_input('Do you want to export model to "%s"? ' % modelDeployParamsPath) in ['y', 'Y', '', 'yes']:
 	print 'saving..'
 	dummyData = torch.randn(1, 3, 224, 224, device=device)
 	model.train(False)

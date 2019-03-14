@@ -27,7 +27,7 @@
 		</v-layout>
 		<!--Show images of previous requests..-->
 		<v-layout col wrap>
-			<v-flex xs12 v-for="(request, index) in predictionRequestHistory">
+			<v-flex xs12 v-for="(request, index) in predictionRequestHistory.reverse()">
 				<!--Visual divider-->
 				<v-layout row align-center>
 					<v-flex xs5>
@@ -83,8 +83,7 @@ export default {
 				if (
 					!(image instanceof File) ||
 					this.images.map(x => x.name).indexOf(image.name) !== -1
-				)
-					continue
+				) continue
 
 				this.images.push(image)
 				this.imagePredictions.push(new ImagePrediction(image))

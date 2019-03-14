@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -57,23 +57,20 @@ namespace PublicApi
 			services.AddTransient<ITreeRecognitionDbProvider, TreeRecognitionDbProvider>();
 
 			// // JWT Bearer authentication
-			services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-				.AddJwtBearer(options =>
-				{
-					options.TokenValidationParameters = new TokenValidationParameters
-					{
-						ValidateIssuer = true,
-						ValidateAudience = true,
-						ValidateLifetime = true,
-						ValidateIssuerSigningKey = true,
-						IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration.GetSection("Keys")["JwtKey"]))
-					};
-				});
+			// services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+			// 	.AddJwtBearer(options =>
+			// 	{
+			// 		options.TokenValidationParameters = new TokenValidationParameters
+			// 		{
+			// 			ValidateIssuer = true,
+			// 			ValidateAudience = true,
+			// 			ValidateLifetime = true,
+			// 			ValidateIssuerSigningKey = true,
+			// 			IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration.GetSection("Keys")["JwtKey"]))
+			// 		};
+			// 	});
 
-			services.AddMvc(options =>
-				{
-					// options.Filters.Add(typeof(CorrelationIdHandlerAttribute));
-				})
+			services.AddMvc()
 				.AddJsonOptions(opts =>
 					opts.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore)
 				.SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
