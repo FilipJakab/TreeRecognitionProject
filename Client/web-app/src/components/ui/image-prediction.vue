@@ -35,12 +35,12 @@ export default {
 	computed: {
 		orderedResultKeys () {
 			if (!this.item.results) return []
-
+			
 			let keys = Object.keys(this.item.results)
 			keys.sort((a, b) =>
 				this.item.results[a] > this.item.results[b] ? -1 : 1
 			)
-
+			
 			return keys
 		}
 	},

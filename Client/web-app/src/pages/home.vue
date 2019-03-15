@@ -16,7 +16,7 @@
 		</v-layout>
 		<!--Show images of current request-->
 		<v-layout row wrap
-		v-for="imagesRow in imagesMatrix(imagePredictions).reverse()" :key="imagesRow[0]">
+		v-for="imagesRow in imagesMatrix(imagePredictions)" :key="imagesRow[0]">
 			<v-flex
 				xs12
 				:class="imagesFlexClasses"
@@ -27,7 +27,7 @@
 		</v-layout>
 		<!--Show images of previous requests..-->
 		<v-layout col wrap>
-			<v-flex xs12 v-for="(request, index) in predictionRequestHistory.reverse()">
+			<v-flex xs12 v-for="(request, index) in predictionRequestHistory">
 				<!--Visual divider-->
 				<v-layout row align-center>
 					<v-flex xs5>
@@ -57,8 +57,6 @@
 </template>
 
 <script>
-import Axios from 'axios'
-
 import VFileField from '../components/form/input/v-file-field'
 
 import VImagePrediction from '../components/ui/image-prediction'
@@ -142,7 +140,7 @@ export default {
 				// move data to history.. (to prevent mixing up..)
 				console.log('images: ', this.images)
 				console.log('predictions: ', this.predictions)
-				this.predictionRequestHistory.push({
+				this.predictionRequestHistory.splice(0, 0, {
 					id: Math.floor(Math.random() * 100),
 					imagePredictions: this.images.map(image => new ImagePrediction(image, this.predictions[image.name]))
 				})
@@ -154,6 +152,7 @@ export default {
 		}
 	},
 	mounted() {
+		console.log('mounted')
 		this.recognitionManager = new ImageRecognitionManager(this.$http, process.env.VUE_APP_BASE_ENDPOINT_URL)
 	}
 }

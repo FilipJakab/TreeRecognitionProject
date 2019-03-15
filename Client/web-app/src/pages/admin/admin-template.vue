@@ -28,8 +28,6 @@
 </template>
 
 <script>
-import DatabaseManager from '../../managers/admin-database'
-
 export default {
 	name: 'admin-template'
 }
