@@ -7,6 +7,13 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "applicationUrl": "http://localhost:1111"
-    }
+    },
+		"PublicApiProduction": {
+			"commandName": "Project",
+			"environmentVariables": {
+				"ASPNETCORE_ENVIRONMENT": "Production"
+			},
+			"applicationUrl": "http://localhost:1111"
+		}
   }
 }

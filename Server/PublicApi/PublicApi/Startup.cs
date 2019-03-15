@@ -1,4 +1,8 @@
-﻿using System.Text;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -34,11 +38,15 @@ namespace PublicApi
 			services.AddOptions();
 			services.Configure<Urls>(Configuration.GetSection("Urls"));
 			services.Configure<Paths>(Configuration.GetSection("Paths"));
-
+			
 			services.AddCors(options => options
 				.AddPolicy("AllowedOriginsPolicy", builder =>
 					builder
-						.WithOrigins("http://localhost:1111/*")
+#if !DEBUG
+						.WithOrigins(Configuration.GetSection("AppUrls").Get<string[]>())
+#else
+						.AllowAnyOrigin()
+#endif
 						.AllowAnyHeader()
 						.AllowAnyMethod()));
 
@@ -47,7 +55,7 @@ namespace PublicApi
 			{
 				opts.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
 			});
-
+			
 			services.AddDbContext<TreeRecognitionDbContext>(opts =>
 				opts.UseSqlServer(Configuration.GetConnectionString("TreeRecognitionDb")));
 
@@ -55,20 +63,6 @@ namespace PublicApi
 			services.AddTransient<IImageManager, ImageManager>();
 			services.AddTransient<IHttpProvider, HttpProvider>();
 			services.AddTransient<ITreeRecognitionDbProvider, TreeRecognitionDbProvider>();
-
-			// // JWT Bearer authentication
-			// services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-			// 	.AddJwtBearer(options =>
-			// 	{
-			// 		options.TokenValidationParameters = new TokenValidationParameters
-			// 		{
-			// 			ValidateIssuer = true,
-			// 			ValidateAudience = true,
-			// 			ValidateLifetime = true,
-			// 			ValidateIssuerSigningKey = true,
-			// 			IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration.GetSection("Keys")["JwtKey"]))
-			// 		};
-			// 	});
 
 			services.AddMvc()
 				.AddJsonOptions(opts =>
@@ -100,7 +94,7 @@ namespace PublicApi
 			app.UseMiddleware<CommonSqlErrorCatchMiddleware>();
 			app.UseMiddleware<FlurlHttpCatchMiddleware>();
 			app.UseMiddleware<UnknownErrorCatchMiddleware>();
-			
+
 			app.UseMvc();
 		}
 	}

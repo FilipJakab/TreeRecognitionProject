@@ -16,13 +16,11 @@ namespace PublicApi
 	public class Program
 	{
 		public static IConfiguration Configuration { get; } = new ConfigurationBuilder()
-			.SetBasePath(Directory.GetCurrentDirectory())
-			.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-			.AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json",
-				optional: true)
-			.AddJsonFile($"ConnectionStrings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", false)
-			.AddEnvironmentVariables()
-			.Build();
+		.SetBasePath(Directory.GetCurrentDirectory())
+		.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+		.AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json",
+			optional: true)
+		.Build();
 
 		public static void Main(string[] args)
 		{
@@ -37,6 +35,13 @@ namespace PublicApi
 		private static IWebHost BuildWebHost(string[] args)
 		{
 			IWebHostBuilder webHostBuilder = WebHost.CreateDefaultBuilder(args)
+				.ConfigureAppConfiguration((ctx, builder) =>
+				{
+					builder.SetBasePath(Directory.GetCurrentDirectory())
+						.AddJsonFile(
+							$"ConnectionStrings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", false)
+						.AddEnvironmentVariables();
+				})
 				.UseStartup<Startup>()
 				.UseUrls(Configuration.GetSection("AppUrls").Get<string[]>())
 				.UseSerilog(ConfigureSerilog); // Serilog usage as the logging provider
