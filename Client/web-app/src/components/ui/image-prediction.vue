@@ -5,7 +5,10 @@
 			<h2>{{ item.file.name }}</h2>
 		</v-card-title>
 		<v-card-text class="pa-0">
-			<v-list dense>
+			<v-chip v-for="predKey in orderedResultKeys" :key="predKey">
+				{{ predKey }} - {{ Math.floor(item.results[predKey] * 10000) / 100 }}%
+			</v-chip>
+			<!--<v-list dense>
 				<v-list-tile v-for="predKey in orderedResultKeys" :key="predKey">
 					<v-list-tile-content>
 						<v-list-tile-title>
@@ -16,7 +19,7 @@
 						</v-list-tile-sub-title>
 					</v-list-tile-content>
 				</v-list-tile>
-			</v-list>
+			</v-list>-->
 		</v-card-text>
 	</v-card>
 </template>

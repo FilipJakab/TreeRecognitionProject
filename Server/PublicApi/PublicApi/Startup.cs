@@ -84,6 +84,7 @@ namespace PublicApi
 
 			app.UseCors();
 
+			app.UseDefaultFiles();
 			app.UseStaticFiles();
 
 			//app.UseHttpsRedirection();

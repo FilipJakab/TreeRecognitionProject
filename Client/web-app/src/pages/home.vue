@@ -15,12 +15,10 @@
 			</v-flex>
 		</v-layout>
 		<!--Show images of current request-->
-		<v-layout row wrap
-		v-for="imagesRow in imagesMatrix(imagePredictions)" :key="imagesRow[0]">
+		<v-layout row wrap>
 			<v-flex
-				xs12
-				:class="imagesFlexClasses"
-				v-for="image in imagesRow[1]"
+				:class="gridClasses"
+				v-for="image in imagePredictions"
 				:key="image.id">
 				<v-image-prediction :item="image" />
 			</v-flex>
@@ -35,18 +33,17 @@
 					</v-flex>
 					<v-flex xs2>
 						<h4 class="display2">
-							{{index}}
+							{{predictionRequestHistory.length - index}}
 						</h4>
 					</v-flex>
 					<v-flex xs5>
 						<v-divider />
 					</v-flex>
 				</v-layout>
-				<v-layout row wrap v-for="imagesRow in imagesMatrix(request.imagePredictions)" :key="imagesRow[0]">
+				<v-layout row wrap>
 					<v-flex
-						xs12
-						:class="imagesFlexClasses"
-						v-for="image in imagesRow[1]"
+						:class="gridClasses"
+						v-for="image in request.imagePredictions"
 						:key="image.id">
 						<v-image-prediction :item="image" />
 					</v-flex>
@@ -88,16 +85,14 @@ export default {
 			}
 		}
 	},
-	computed: {
-		imagesFlexClasses () {
-			let res = {}
-			res['md' + Number(Math.round(12 / this.imagesPerRow))] = true
-			return res
-		}
-	},
 	data () {
 		return {
-			imagesPerRow: 4,
+			gridClasses: {
+				'xs12': true,
+				'sm6': true,
+				'md4': true,
+				'lg3': true
+			},
 			imagesPayload: [],
 			imagePredictions: [],
 			images: [],
@@ -108,25 +103,6 @@ export default {
 		}
 	},
 	methods: {
-		imagesMatrix (predictions) {
-			let rows = []
-			
-			for (
-				let i = 0;
-				i < Math.ceil(predictions.length / this.imagesPerRow);
-				i++
-			) {
-				rows.push([
-					Math.random(),
-					predictions.slice(
-						i * this.imagesPerRow,
-						(i + 1) * this.imagesPerRow
-					)
-				])
-			}
-			
-			return rows
-		},
 		async SendImages () {
 			if (this.processing) return
 
@@ -134,9 +110,8 @@ export default {
 			let requestPromise
 			try {
 				requestPromise = this.recognitionManager.GetPredictions(this.images)
-			} finally {
 				this.predictions = (await requestPromise).data
-				
+			} finally {
 				// move data to history.. (to prevent mixing up..)
 				console.log('images: ', this.images)
 				console.log('predictions: ', this.predictions)

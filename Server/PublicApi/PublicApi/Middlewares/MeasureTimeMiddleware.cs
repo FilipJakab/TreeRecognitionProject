@@ -25,7 +25,7 @@ namespace PublicApi.Middlewares
 			{
 				((HttpContext) state).Response
 					.Headers.Add(
-						"ElapsedTicks",
+						"X-ElapsedTicks",
 						new StringValues(watch.ElapsedTicks.ToString())
 					);
 

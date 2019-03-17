@@ -472,5 +472,6 @@ yarn-error.log*
 # custom
 images/
 MachineLearning/deeplearning-api/upload_dir/
-Server/PublicApi/PublicApi/ConnectionStrings.json
-Server/PublicApi/PublicApi/Keys.json
+MachineLearning/pytorch/deploy/
+Server/PublicApi/PublicApi/ConnectionStrings.*.json
+Server/PublicApi/PublicApi/wwwroot/

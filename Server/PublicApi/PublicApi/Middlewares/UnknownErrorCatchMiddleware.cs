@@ -5,6 +5,7 @@ using System.Net.Mime;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -15,10 +16,12 @@ namespace PublicApi.Middlewares
 	public class UnknownErrorCatchMiddleware
 	{
 		private readonly RequestDelegate next;
+		private readonly IHostingEnvironment env;
 
-		public UnknownErrorCatchMiddleware(RequestDelegate next)
+		public UnknownErrorCatchMiddleware(RequestDelegate next, IHostingEnvironment env)
 		{
 			this.next = next;
+			this.env = env;
 		}
 
 		public async Task InvokeAsync(
@@ -37,10 +40,13 @@ namespace PublicApi.Middlewares
 
 				context.Response.StatusCode = StatusCodes.Status500InternalServerError;
 				context.Response.ContentType = "application/json";
-				context.Response.Body.Write(JsonConvert.SerializeObject(ex, new JsonSerializerSettings
-				{
-					ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-				}).Select(x => (byte)x).ToArray());
+				if (env.IsDevelopment())
+					context.Response.Body.Write(JsonConvert.SerializeObject(ex, new JsonSerializerSettings
+					{
+						ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+					}).Select(x => (byte) x).ToArray());
+				else
+					throw;
 			}
 		}
 	}
