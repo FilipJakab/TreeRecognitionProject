@@ -11,6 +11,7 @@
 			ref="filePlaceholder"
 			@change="onFileChange"
 			:multiple="multiple"
+			:accept="types"
 		/>
 		<!--<v-input v-bind="$props">
 			<v-text-field @click="openFileDialog" v-bind="$props" />
@@ -23,7 +24,7 @@ import { VTextField } from 'vuetify/lib'
 
 export default {
 	name: 'v-file-field',
-	props: ['multiple', 'label', 'placeholder'],
+	props: ['multiple', 'label', 'placeholder', 'types'],
 	components: {
 		VTextField
 	},

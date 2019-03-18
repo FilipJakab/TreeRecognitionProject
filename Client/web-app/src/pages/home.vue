@@ -2,7 +2,7 @@
 	<v-container grid-list-md text-xs-center fluid>
 		<v-layout col>
 			<v-flex shrink xs12 md2>
-				<v-file-field v-model="imagesPayload" label="Select images" multiple />
+				<v-file-field v-model="imagesPayload" label="Select images" multiple types=".jpg,.jpeg,.png" />
 			</v-flex>
 			<v-spacer />
 			<v-flex md1>
@@ -25,7 +25,7 @@
 		</v-layout>
 		<!--Show images of previous requests..-->
 		<v-layout col wrap>
-			<v-flex xs12 v-for="(request, index) in predictionRequestHistory">
+			<v-flex xs12 v-for="(request, index) in predictionRequestHistory" :key="index">
 				<!--Visual divider-->
 				<v-layout row align-center>
 					<v-flex xs5>
@@ -111,10 +111,7 @@ export default {
 			try {
 				requestPromise = this.recognitionManager.GetPredictions(this.images)
 				this.predictions = (await requestPromise).data
-			} finally {
-				// move data to history.. (to prevent mixing up..)
-				console.log('images: ', this.images)
-				console.log('predictions: ', this.predictions)
+
 				this.predictionRequestHistory.splice(0, 0, {
 					id: Math.floor(Math.random() * 100),
 					imagePredictions: this.images.map(image => new ImagePrediction(image, this.predictions[image.name]))
@@ -122,8 +119,15 @@ export default {
 				
 				this.imagePredictions = []
 				this.images = []
-				this.processing = false
+
+				this.toastSuccess('Request was successful', 'Success')
+			} catch (ex) {
+				this.toastError('Error occured while processing request..', 'Error')
+
+				console.error(ex)
 			}
+
+			this.processing = false
 		}
 	},
 	mounted() {
