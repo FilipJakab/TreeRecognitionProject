@@ -37,7 +37,6 @@ from constants import (
 
 # preparing device
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-# device = torch.device('cpu')
 
 dataset = datasets.ImageFolder(dataDir, trainTransformationFlow)
 dataLoader = torch.utils.data.DataLoader(dataset, batch_size=batchSize, shuffle=True, num_workers=4)
