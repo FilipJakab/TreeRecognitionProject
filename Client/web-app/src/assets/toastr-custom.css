@@ -1,0 +1,4 @@
+#toast-container .toast-title,
+#toast-container .toast-message {
+	font-family: 'Roboto', sans-serif;
+}
