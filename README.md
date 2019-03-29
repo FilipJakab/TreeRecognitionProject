@@ -2,14 +2,15 @@
 
 This repository contains:
 
-  * Caffe2 boiler-plates (nearly done)
+  * Caffe2 boiler-plates (not being used - switched to pytorch only)
     * CNN modeling
     * Dataset manipulation (creation)
-  * Pytorch
+  * Pytorch (All ML stuff)
   	* CNN Training
+   * CNN Predictor
   * Python-based hidden web API (to be able to call python scripts from APIs for predictions)
-  * ASP.NET MVC Core API (TODO)
-  * Simple SPA web page for communication with above API (TODO)
+  * ASP.NET MVC Core API
+  * Simple SPA web page for communication with above API
 
 Planned output:
 
