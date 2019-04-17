@@ -1,4 +1,6 @@
-# MachineLearningScripts
+# Project: TreeRecognition
+
+##### live demo of project can be found at [this](https://treebird.io/) url
 
 This repository contains:
 
